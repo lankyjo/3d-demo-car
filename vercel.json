@@ -1,3 +1,4 @@
 {
+  "redirects": [{ "source": "/prototypes", "destination": "/prototypes/e-ux/", "permanent": false }],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
