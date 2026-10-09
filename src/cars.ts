@@ -72,6 +72,11 @@ export const extras = [
   { id: 'child-seat', name: 'Child seat', perDay: 8 },
 ] as const
 
+// Paint options for the 3D view; null = the factory colour baked into the model.
+export const paints: [name: string, hex: string | null][] = [
+  ['Factory', null], ['Crimson', '#b51724'], ['Midnight', '#2a2d33'], ['Pearl', '#f4f1e8'], ['Ocean', '#215fa6'], ['Forest', '#2f6b4c'], ['Graphite', '#6b6e75'],
+]
+
 export const locations = ['Airport terminal', 'Downtown office', 'Central station']
 
 export const money = (n: number) => `$${n.toLocaleString()}`

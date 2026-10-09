@@ -1,0 +1,375 @@
+<!-- PROTOTYPE — throwaway UX exploration for Variant E -->
+<!-- Concept 1 "Stage tabs": photos are alternate views of the stage ([3D] [Front] [Side] [Rear]); paint docks in the stage, 3D only. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage Tabs · Variant E</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<script src="./data.js"></script>
+<style>
+:root {
+  --bg: #07080a; --fg: #eef0f2; --dim: #8b9099; --mute: #5d626a;
+  --line: rgba(255,255,255,.09); --acc: #c6ff3d; --glass: rgba(20,22,26,.72);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'DM Sans', system-ui, sans-serif; overflow-x: hidden; }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.root { position: relative; min-height: 100dvh; padding-bottom: 120px; }
+.spot { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 50% 45% at 55% 40%, rgba(198,255,61,.07), transparent 70%),
+              radial-gradient(ellipse 70% 60% at 55% 30%, rgba(255,255,255,.06), transparent 70%); }
+
+/* header */
+header { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 32px; border-bottom: 1px solid var(--line); }
+.logo { font-family: Anton, sans-serif; font-size: 20px; letter-spacing: .08em; }
+.logo span { color: var(--acc); margin-right: 4px; } .logo em { color: var(--dim); font-style: normal; margin: 0 2px; }
+nav { display: flex; gap: 22px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.counter { display: flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; color: var(--dim); font-size: 14px; }
+.counter b { color: var(--fg); font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; }
+.arrow { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--fg); font-size: 22px; line-height: 1; transition: border-color .2s, color .2s; }
+.arrow:hover { border-color: var(--acc); color: var(--acc); }
+
+/* layout */
+main { position: relative; z-index: 2; display: grid; grid-template-columns: 250px minmax(0,1fr) 320px; min-height: calc(100dvh - 79px - 120px); }
+
+/* desktop selector: brand accordion */
+.select { padding: 24px 0 24px 32px; display: flex; flex-direction: column; gap: 2px; }
+.kicker { font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+.brand { border-left: 2px solid var(--line); transition: border-color .25s; }
+.brand.open { border-color: var(--acc); }
+.brand-btn { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; background: none; border: 0; color: var(--dim); text-align: left; }
+.brand-btn span { font-family: Anton, sans-serif; font-size: 22px; letter-spacing: .04em; text-transform: uppercase; transition: color .2s; }
+.brand-btn small { font-size: 11px; color: var(--mute); }
+.brand-btn:hover span, .brand.open .brand-btn span { color: var(--fg); }
+.models { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
+.brand.open .models { grid-template-rows: 1fr; }
+.models > div { overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding-left: 8px; }
+.brand.open .models > div { padding-bottom: 8px; }
+.model { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--fg); text-align: left; transition: background .2s, border-color .2s; }
+.model:hover { background: rgba(255,255,255,.04); }
+.model.on { background: rgba(198,255,61,.08); border-color: rgba(198,255,61,.35); }
+.model img { width: 64px; height: 38px; object-fit: contain; flex: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.model span { display: flex; flex-direction: column; min-width: 0; }
+.model b { font-size: 13px; font-weight: 600; } .model small { font-size: 11px; color: var(--dim); }
+
+/* mobile selector: chip strip (hidden on desktop) */
+.strip { display: none; }
+
+/* stage */
+.stage { position: relative; min-height: 540px; overflow: hidden; }
+.title { position: absolute; inset: 24px 0 auto; text-align: center; pointer-events: none; }
+.meta { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); animation: rise .5s ease both; }
+.meta span { color: var(--acc); font-weight: 700; }
+.meta i { width: 4px; height: 4px; border-radius: 50%; background: #444950; }
+.ghost { font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; white-space: nowrap; font-size: clamp(90px, 15vw, 240px); color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.14); margin-top: 12px; animation: ghost .8s cubic-bezier(.2,.7,.2,1) both; }
+h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
+.floor { position: absolute; left: 10%; right: 10%; bottom: 10%; height: 30%; pointer-events: none; background: radial-gradient(ellipse 50% 40% at 50% 60%, rgba(198,255,61,.14), transparent 70%); }
+.view { position: absolute; inset: 70px 0 64px; z-index: 1; transition: opacity .35s ease; }
+model-viewer { width: 100%; height: 100%; background: transparent; --poster-color: transparent; --progress-bar-color: var(--acc); }
+.photo { display: flex; align-items: center; justify-content: center; padding: 10px 6%; }
+.photo img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 24px 30px rgba(0,0,0,.7)); animation: rise .4s ease both; }
+.view[hidden] { display: block; opacity: 0; pointer-events: none; }
+.coming { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); padding: 5px 10px; border-radius: 99px; border: 1px dashed rgba(255,255,255,.2); background: rgba(7,8,10,.6); white-space: nowrap; }
+
+/* stage dock: tabs center, paint left, price right */
+.tabs { position: absolute; z-index: 3; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; padding: 4px; gap: 2px; border-radius: 99px; background: var(--glass); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.tabs button { border: 0; background: none; color: var(--dim); font-size: 12px; font-weight: 600; letter-spacing: .06em; padding: 8px 16px; border-radius: 99px; transition: background .2s, color .2s; }
+.tabs button:hover { color: var(--fg); }
+.tabs button[aria-selected="true"] { background: var(--acc); color: #0a0b0c; }
+.paint { position: absolute; z-index: 3; left: 24px; bottom: 18px; display: flex; flex-direction: column; gap: 8px; }
+.paint-label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.paint-label b { color: var(--fg); font-weight: 600; letter-spacing: .08em; text-transform: none; margin-left: 6px; font-size: 12px; }
+.swatches { display: flex; gap: 6px; }
+.sw { width: 22px; height: 22px; border-radius: 50%; padding: 0; border: 1px solid rgba(255,255,255,.25); transition: transform .15s, box-shadow .2s, opacity .25s; }
+.sw:hover { transform: scale(1.12); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--acc); }
+.sw.factory { background: conic-gradient(#e9e9e6 0 25%, #1d1f22 0 50%, #8a8d91 0 75%, #7a2a2a 0); }
+.paint.off .swatches { opacity: .25; pointer-events: none; }
+.paint-hint { font-size: 11px; color: var(--mute); display: none; }
+.paint.off .paint-hint { display: block; }
+.select { grid-column: 1; grid-row: 1; } .stage { grid-column: 2; grid-row: 1; } .specs { grid-column: 3; grid-row: 1; }
+.rate { grid-column: 2; grid-row: 1; align-self: end; justify-self: end; margin: 0 24px 16px 0; position: relative; z-index: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.rate div { display: flex; align-items: baseline; gap: 6px; color: var(--dim); font-size: 12px; }
+.rate strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 38px; line-height: 1; color: var(--fg); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: rgba(255,255,255,.03); white-space: nowrap; }
+.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px var(--acc); }
+.chip b { color: var(--fg); font-weight: 600; }
+
+/* specs */
+.specs { padding: 24px 32px 24px 0; display: flex; flex-direction: column; gap: 18px; }
+.specs > * { animation: rise .5s ease both; }
+.stats { display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid var(--line); border-radius: 12px; }
+.stats div { padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.stats div + div { border-left: 1px solid var(--line); }
+.stats strong { font-size: 18px; font-weight: 700; }
+.stats span { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.stats .low strong { color: #ffb23d; }
+.gauges { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.gauge { position: relative; text-align: center; }
+.gauge svg { width: 100%; display: block; transform: rotate(135deg); }
+.gauge circle { fill: none; stroke-width: 7; stroke-linecap: round; }
+.g-track { stroke: rgba(255,255,255,.08); stroke-dasharray: 75 100; }
+.g-fill { stroke: var(--acc); filter: drop-shadow(0 0 4px rgba(198,255,61,.5)); animation: fill 1s cubic-bezier(.2,.7,.2,1) both .1s; }
+.g-read { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.g-read strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; }
+.g-read span { font-size: 10px; color: var(--dim); }
+.g-label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; margin-top: -8px; }
+.g-note { font-size: 10px; color: var(--mute); }
+dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+dl div { padding: 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+dt { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+dd { margin: 2px 0 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+dl .odo { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; }
+dl .odo dd { font-variant-numeric: tabular-nums; }
+dl .odo dd small { color: var(--dim); font-weight: 400; margin-left: 4px; }
+
+/* booking bar */
+.bar { position: fixed; z-index: 20; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(1120px, calc(100% - 32px)); display: grid; grid-template-columns: 1.3fr 1fr 1fr auto auto; align-items: center; gap: 4px; padding: 8px; border-radius: 18px; background: var(--glass); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.fields { display: contents; }
+.field { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 12px; min-width: 0; }
+.field:hover { background: rgba(255,255,255,.04); }
+.field span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.field select, .field input { background: none; border: 0; color: var(--fg); font: inherit; font-size: 14px; font-weight: 600; padding: 0; min-width: 0; width: 100%; color-scheme: dark; }
+.field option { background: #15171b; }
+.total { display: flex; flex-direction: column; align-items: flex-end; padding: 0 14px; white-space: nowrap; background: none; border: 0; color: var(--fg); cursor: default; }
+.total span { font-size: 11px; color: var(--dim); }
+.total strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 26px; line-height: 1.1; }
+.total .caret { display: none; }
+.cta { height: 54px; padding: 0 24px; border: 0; border-radius: 12px; white-space: nowrap; background: var(--acc); color: #0a0b0c; font-weight: 700; font-size: 15px; box-shadow: 0 0 24px rgba(198,255,61,.35); transition: transform .15s, box-shadow .2s; }
+.cta:hover { box-shadow: 0 0 36px rgba(198,255,61,.55); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes ghost { from { opacity: 0; transform: translateX(60px); letter-spacing: .12em; } }
+@keyframes fill { from { stroke-dasharray: 0 100; } }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+
+/* tablet */
+@media (max-width: 1100px) {
+  main { grid-template-columns: 220px minmax(0,1fr); }
+  .specs { grid-column: 1 / -1; grid-row: 2; padding: 0 32px 24px; display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  nav { display: none; }
+}
+
+/* mobile */
+@media (max-width: 720px) {
+  .root { padding-bottom: 100px; }
+  header { padding: 12px 16px; }
+  .logo { font-size: 17px; }
+  .arrow { width: 34px; height: 34px; }
+  main { display: flex; flex-direction: column; }
+  .select { display: none; }
+  .strip { display: flex; position: sticky; top: 0; z-index: 10; gap: 6px; align-items: center; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 10px 16px; background: rgba(7,8,10,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .strip::-webkit-scrollbar { display: none; }
+  .divider { flex: none; font-family: Anton, sans-serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); writing-mode: vertical-rl; transform: rotate(180deg); padding: 0 2px; border-left: 1px solid var(--line); margin-left: 6px; padding-left: 8px; }
+  .divider:first-child { margin-left: 0; }
+  .mchip { flex: none; scroll-snap-align: start; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--fg); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .mchip img { width: 46px; height: 28px; object-fit: contain; }
+  .mchip.on { background: rgba(198,255,61,.1); border-color: rgba(198,255,61,.5); }
+  .stage { min-height: 400px; }
+  .title { inset: 14px 0 auto; }
+  .meta { font-size: 10px; gap: 8px; letter-spacing: .18em; }
+  .ghost { font-size: 22vw; }
+  .view { inset: 56px 0 96px; }
+  .tabs { bottom: 12px; }
+  .tabs button { padding: 7px 13px; }
+  .paint { left: 16px; right: 16px; bottom: 58px; flex-direction: row; align-items: center; justify-content: space-between; }
+  .paint-label { display: none; }
+  .paint.off .paint-hint { position: absolute; left: 0; right: 0; text-align: center; }
+  .paint.off .swatches { visibility: hidden; }
+  .rate { margin: 0; flex-direction: row; justify-content: space-between; align-items: center; padding: 0 16px 6px; }
+  .rate strong { font-size: 30px; }
+  .specs { display: flex; padding: 12px 16px 16px; gap: 14px; }
+  .gauges { max-width: 360px; margin: 0 auto; width: 100%; }
+  .bar { grid-template-columns: 1fr auto; bottom: 12px; width: calc(100% - 24px); border-radius: 16px; padding: 6px; }
+  .fields { display: none; }
+  .bar.open .fields { display: grid; grid-template-columns: 1fr 1fr; grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 2px; }
+  .bar.open .field:first-child { grid-column: 1 / -1; }
+  .total { align-items: flex-start; padding: 2px 10px; cursor: pointer; border-radius: 10px; }
+  .total .caret { display: inline; color: var(--acc); margin-left: 4px; }
+  .cta { height: 48px; padding: 0 18px; font-size: 14px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+}
+</style>
+</head>
+<body>
+<div class="root">
+  <div class="spot" aria-hidden="true"></div>
+  <header>
+    <div class="logo"><span>◆</span> GARAGE<em>/</em>RENT</div>
+    <nav id="nav"></nav>
+    <div class="counter">
+      <button class="arrow" id="prev" aria-label="Previous car">‹</button>
+      <span><b id="idx">01</b> / <span id="count"></span></span>
+      <button class="arrow" id="next" aria-label="Next car">›</button>
+    </div>
+  </header>
+
+  <div class="strip" id="strip" role="listbox" aria-label="Choose a car"></div>
+
+  <main>
+    <aside class="select" id="select" aria-label="Choose a car"><div class="kicker">Select vehicle</div></aside>
+
+    <section class="stage">
+      <div class="title" id="title"></div>
+      <div class="floor" aria-hidden="true"></div>
+      <div class="view" id="v3d">
+        <model-viewer id="mv" camera-controls disable-pan auto-rotate auto-rotate-delay="2500" rotation-per-second="14deg"
+          shadow-intensity="1.2" shadow-softness="0.8" environment-image="neutral" exposure="1.05" interaction-prompt="none"
+          camera-orbit="72deg 82deg 100%" min-camera-orbit="auto 58deg auto" max-camera-orbit="auto 88deg auto"
+          field-of-view="24deg" min-field-of-view="24deg" max-field-of-view="24deg" alt="3D model of the selected car"></model-viewer>
+      </div>
+      <div class="view photo" id="vphoto" hidden><img id="photo" alt=""><span class="coming" id="coming" hidden>Photo coming · showing front</span></div>
+
+      <div class="paint" id="paint">
+        <div class="paint-label">Paint<b id="paintName">Factory</b></div>
+        <div class="swatches" id="swatches"></div>
+        <div class="paint-hint">Paint preview is 3D-only — photos show the real car</div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="View" id="tabs">
+        <button role="tab" data-v="3d" aria-selected="true">3D</button>
+        <button role="tab" data-v="front" aria-selected="false">Front</button>
+        <button role="tab" data-v="side" aria-selected="false">Side</button>
+        <button role="tab" data-v="rear" aria-selected="false">Rear</button>
+      </div>
+    </section>
+
+    <div class="rate" id="rate"></div>
+    <aside class="specs" id="specs" aria-label="Specifications"></aside>
+  </main>
+
+  <form class="bar" id="bar">
+    <div class="fields">
+      <label class="field"><span>Pick-up</span><select id="loc"></select></label>
+      <label class="field"><span>From</span><input type="date" id="from"></label>
+      <label class="field"><span>Return</span><input type="date" id="to"></label>
+    </div>
+    <button type="button" class="total" id="total" aria-expanded="false"></button>
+    <button class="cta" id="cta" type="submit"></button>
+  </form>
+</div>
+
+<script>
+const F = window.FLEET, P = window.PAINTS, L = window.LOCATIONS;
+const $ = (id) => document.getElementById(id);
+const money = (n) => '$' + n.toLocaleString('en-US');
+const km = (n) => n.toLocaleString('en-US');
+const pad = (n) => String(n).padStart(2, '0');
+const iso = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const plus = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
+const brands = [...new Set(F.map((c) => c.brand))];
+const maxHp = Math.max(...F.map((c) => c.specs.hp)), maxTop = Math.max(...F.map((c) => c.specs.topSpeed)), minAcc = Math.min(...F.map((c) => c.specs.accel));
+
+const st = { i: 0, view: '3d', paint: 0, open: F[0].brand };
+const mv = $('mv');
+
+// static chrome
+$('nav').innerHTML = `<span>${F.length} cars</span><span>${brands.length} marques</span><span>${L.length} pick-up points</span>`;
+$('count').textContent = pad(F.length);
+$('loc').innerHTML = L.map((l) => `<option>${l}</option>`).join('');
+$('from').value = plus(1); $('from').min = plus(0); $('to').value = plus(4);
+$('select').insertAdjacentHTML('beforeend', brands.map((b) => {
+  const ms = F.filter((c) => c.brand === b);
+  return `<div class="brand" data-b="${b}"><button class="brand-btn"><span>${b}</span><small>${ms.length} · from ${money(Math.min(...ms.map((m) => m.dailyRate)))}</small></button>
+    <div class="models"><div>${ms.map((m) => `<button class="model" data-id="${m.id}"><img src="${m.photos.front}" alt="" loading="lazy"><span><b>${m.model}</b><small>${m.category} · ${money(m.dailyRate)}/day</small></span></button>`).join('')}</div></div></div>`;
+}).join(''));
+$('strip').innerHTML = brands.map((b) => `<span class="divider">${b.replace('Mercedes-Benz', 'Merc')}</span>` +
+  F.filter((c) => c.brand === b).map((m) => `<button class="mchip" role="option" data-id="${m.id}"><img src="${m.photos.front}" alt="">${m.model}</button>`).join('')).join('');
+$('swatches').innerHTML = P.map(([n, h], k) => `<button class="sw${h ? '' : ' factory'}" data-k="${k}" title="${n}" aria-label="${n} paint" ${h ? `style="background:${h}"` : ''}></button>`).join('');
+
+const gauge = (label, value, unit, ratio, note) => `<div class="gauge"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="g-track" cx="50" cy="50" r="40" pathLength="100"/><circle class="g-fill" cx="50" cy="50" r="40" pathLength="100" style="stroke-dasharray:${75 * ratio} 100"/></svg><div class="g-read"><strong>${value}</strong><span>${unit}</span></div><div class="g-label">${label}</div><div class="g-note">${note}</div></div>`;
+
+function tint() {
+  const hex = P[st.paint][1];
+  const rgb = hex ? [1, 3, 5].map((o) => parseInt(hex.slice(o, o + 2), 16) / 255) : [1, 1, 1];
+  mv.model?.materials.forEach((m) => m.pbrMetallicRoughness.setBaseColorFactor([...rgb, 1]));
+}
+// Zoom band: measure the auto-framed fit radius per model, then clamp to 85%–120% of it (start a touch closer, like the live page).
+const ORBIT = '72deg 82deg', TIGHT = 0.66, FIT_IN = 0.85, FIT_OUT = 1.2, START = 1; // TIGHT: model-viewer frames the bounding sphere; a car is long + low so we pull in to fill the stage
+mv.addEventListener('load', async () => {
+  tint();
+  mv.minCameraOrbit = 'auto 58deg auto'; mv.maxCameraOrbit = 'auto 88deg auto';
+  mv.cameraOrbit = `${ORBIT} 100%`; mv.jumpCameraToGoal();
+  await new Promise(requestAnimationFrame);
+  const fit = mv.getCameraOrbit().radius * TIGHT;
+  mv.minCameraOrbit = `auto 58deg ${fit * FIT_IN}m`; mv.maxCameraOrbit = `auto 88deg ${fit * FIT_OUT}m`;
+  mv.cameraOrbit = `${ORBIT} ${fit * START}m`; mv.jumpCameraToGoal();
+});
+
+function quote() {
+  const c = F[st.i];
+  const days = Math.max(0, Math.round((new Date($('to').value) - new Date($('from').value)) / 864e5));
+  $('total').innerHTML = `<span>${days} ${days === 1 ? 'day' : 'days'} × ${money(c.dailyRate)}<i class="caret">▾</i></span><strong>${money(days * c.dailyRate)}</strong>`;
+  $('cta').innerHTML = `Book ${c.model} <span aria-hidden="true">→</span>`;
+  $('cta').disabled = days === 0;
+}
+
+function setView(v) {
+  st.view = v;
+  const c = F[st.i];
+  document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.v === v));
+  $('v3d').hidden = v !== '3d'; $('vphoto').hidden = v === '3d';
+  $('paint').classList.toggle('off', v !== '3d');
+  if (v === '3d') return;
+  const img = $('photo');
+  $('coming').hidden = true;
+  img.onerror = () => { img.onerror = null; img.src = c.photos.front; $('coming').hidden = false; };
+  img.alt = `${c.brand} ${c.model}, ${v} view`;
+  img.src = c.photos[v];
+}
+
+function render() {
+  const c = F[st.i], s = c.specs;
+  $('idx').textContent = pad(st.i + 1);
+  document.querySelectorAll('.brand').forEach((el) => el.classList.toggle('open', el.dataset.b === st.open));
+  document.querySelectorAll('.model, .mchip').forEach((el) => {
+    const on = el.dataset.id === c.id;
+    el.classList.toggle('on', on); el.setAttribute(el.classList.contains('mchip') ? 'aria-selected' : 'aria-current', on);
+  });
+  const chip = document.querySelector(`.mchip[data-id="${c.id}"]`), strip = $('strip');
+  strip.scrollTo({ left: chip.offsetLeft - strip.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
+
+  $('title').innerHTML = `<div class="meta"><span>${c.brand}</span><i></i>${c.year}<i></i>${c.category}<i></i>${c.fuel}</div><div class="ghost" aria-hidden="true">${c.model}</div><h1>${c.brand} ${c.model}</h1>`;
+  if (mv.getAttribute('src') !== c.glb) { mv.src = c.glb; }
+  setView(st.view);
+
+  $('rate').innerHTML = `<span class="chip"><b>${km(c.odometer)} km</b> on the clock</span><div>From <strong>${money(c.dailyRate)}</strong> / day</div>`;
+  $('specs').innerHTML = `
+    <div class="stats"><div><strong>★ ${c.rating.toFixed(1)}</strong><span>rating</span></div><div><strong>${c.trips}</strong><span>trips</span></div><div class="${c.available <= 2 ? 'low' : ''}"><strong>${c.available}</strong><span>available</span></div></div>
+    <div class="gauges">${gauge('Power', s.hp, 'hp', s.hp / maxHp, `${Math.round(s.hp / maxHp * 100)}% of fleet max`)}${gauge('0–100', s.accel.toFixed(1), 'sec', minAcc / s.accel, `best ${minAcc.toFixed(1)}s`)}${gauge('Top speed', s.topSpeed, 'km/h', s.topSpeed / maxTop, `max ${maxTop}`)}</div>
+    <dl><div><dt>Drive</dt><dd>${s.drive}</dd></div><div><dt>Gearbox</dt><dd>${s.gearbox}</dd></div>
+      <div><dt>Efficiency</dt><dd>${s.efficiency}</dd></div><div><dt>Boot</dt><dd>${s.boot} L</dd></div>
+      <div><dt>Seats</dt><dd>${c.seats}</dd></div><div><dt>Fuel</dt><dd>${c.fuel}</dd></div>
+      <div class="odo"><dt>Odometer</dt><dd>${km(c.odometer)}<small>km</small></dd></div></dl>`;
+  quote();
+}
+
+function go(i) { st.i = (i + F.length) % F.length; st.open = F[st.i].brand; render(); }
+function paint(k) {
+  st.paint = k; $('paintName').textContent = P[k][0];
+  document.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.k === k));
+  tint();
+}
+
+$('prev').onclick = () => go(st.i - 1);
+$('next').onclick = () => go(st.i + 1);
+document.addEventListener('click', (e) => {
+  const pick = e.target.closest('[data-id]'); if (pick) return go(F.findIndex((c) => c.id === pick.dataset.id));
+  const b = e.target.closest('.brand-btn'); if (b) { const n = b.parentElement.dataset.b; st.open = st.open === n ? null : n; return render(); }
+  const t = e.target.closest('#tabs button'); if (t) return setView(t.dataset.v);
+  const sw = e.target.closest('.sw'); if (sw) return paint(+sw.dataset.k);
+});
+$('total').onclick = () => { if (matchMedia('(max-width: 720px)').matches) { const o = $('bar').classList.toggle('open'); $('total').setAttribute('aria-expanded', o); } };
+$('from').onchange = () => { $('to').min = $('from').value; if ($('to').value < $('from').value) $('to').value = $('from').value; quote(); };
+$('to').onchange = quote;
+$('to').min = $('from').value;
+$('bar').onsubmit = (e) => { e.preventDefault(); alert(`Prototype: would book ${F[st.i].brand} ${F[st.i].model}`); };
+paint(0); render();
+</script>
+</body>
+</html>

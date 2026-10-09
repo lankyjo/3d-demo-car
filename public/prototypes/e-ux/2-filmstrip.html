@@ -1,0 +1,438 @@
+<!-- PROTOTYPE — throwaway UX exploration for Variant E -->
+<!-- Concept 2: "Filmstrip + garage picker" — no permanent selector; header name opens a Garage overlay; filmstrip swaps 3D / photos. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garage Rent · Filmstrip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<script src="./data.js"></script>
+<style>
+:root {
+  --bg: #07080a; --fg: #eef0f2; --dim: #8b9099; --mute: #5d626a;
+  --line: rgba(255,255,255,.09); --acc: #c6ff3d; --glass: rgba(20,22,26,.72);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'DM Sans', system-ui, sans-serif; overflow-x: hidden; }
+body { min-height: 100dvh; padding-bottom: 120px; position: relative; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.spot { position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 50% 45% at 50% 40%, rgba(198,255,61,.07), transparent 70%),
+              radial-gradient(ellipse 70% 60% at 50% 30%, rgba(255,255,255,.06), transparent 70%); }
+
+/* header */
+header { position: relative; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 16px 32px; border-bottom: 1px solid var(--line); }
+.logo { font-family: Anton, sans-serif; font-size: 20px; letter-spacing: .08em; white-space: nowrap; }
+.logo span { color: var(--acc); margin-right: 4px; }
+.logo em { color: var(--dim); font-style: normal; margin: 0 2px; }
+.picker { margin: 0 auto; display: inline-flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 8px 16px 8px 18px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.03);
+  transition: border-color .2s, background .2s; }
+.picker:hover { border-color: rgba(198,255,61,.5); background: rgba(198,255,61,.05); }
+.picker small { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--acc); font-weight: 700; white-space: nowrap; }
+.picker b { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picker i { font-style: normal; color: var(--dim); font-size: 12px; }
+.counter { display: flex; align-items: center; gap: 12px; color: var(--dim); font-size: 14px; font-variant-numeric: tabular-nums; }
+.counter b { color: var(--fg); font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; }
+.arrow { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.03);
+  font-size: 22px; line-height: 1; transition: border-color .2s, color .2s; }
+.arrow:hover { border-color: var(--acc); color: var(--acc); }
+
+/* stage */
+.stage { position: relative; z-index: 2; height: clamp(380px, calc(100dvh - 250px), 760px); overflow: hidden; }
+.title { position: absolute; inset: 22px 0 auto; text-align: center; pointer-events: none; }
+.meta { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+  font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.meta span { color: var(--acc); font-weight: 700; }
+.meta i { width: 4px; height: 4px; border-radius: 50%; background: #444950; }
+.ghost { font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; white-space: nowrap;
+  font-size: clamp(90px, 16vw, 260px); color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.14); margin-top: 12px;
+  animation: ghost .8s cubic-bezier(.2,.7,.2,1) both; }
+.floor { position: absolute; left: 10%; right: 10%; bottom: 6%; height: 30%; pointer-events: none;
+  background: radial-gradient(ellipse 50% 40% at 50% 60%, rgba(198,255,61,.14), transparent 70%); }
+.view { position: absolute; inset: 60px 96px 20px 96px; }
+model-viewer { width: 100%; height: 100%; background: transparent; --poster-color: transparent; --progress-bar-color: var(--acc); }
+.photo { width: 100%; height: 100%; padding: 50px 4% 40px; object-fit: contain; filter: drop-shadow(0 30px 30px rgba(0,0,0,.6)); animation: rise .4s ease both; }
+.view[data-mode="3d"] .photo, .view:not([data-mode="3d"]) model-viewer { display: none; }
+.soon { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: #ffb23d; background: rgba(255,178,61,.08); border: 1px solid rgba(255,178,61,.25);
+  padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--mute); white-space: nowrap; pointer-events: none; }
+.rate { position: absolute; left: 32px; bottom: 22px; display: flex; align-items: baseline; gap: 6px; color: var(--dim); font-size: 12px; }
+.rate strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 40px; color: var(--fg); }
+
+/* filmstrip */
+.strip { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 3; }
+.thumb { position: relative; width: 60px; height: 60px; padding: 0; border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--line); background: rgba(255,255,255,.04); display: grid; place-items: center;
+  transition: border-color .2s, transform .15s; }
+.thumb:hover { border-color: rgba(255,255,255,.3); }
+.thumb[aria-pressed="true"] { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc), 0 0 18px rgba(198,255,61,.25); }
+.thumb:active { transform: scale(.95); }
+.thumb img { width: 140%; height: 100%; object-fit: contain; }
+.thumb span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+  background: linear-gradient(transparent, rgba(0,0,0,.8)); padding: 8px 0 3px; color: #cfd2d6; }
+.thumb.is-soon span::after { content: ' ·'; color: #ffb23d; }
+.thumb svg { width: 26px; height: 26px; color: var(--acc); margin-bottom: 8px; }
+
+/* paint */
+.paint { position: absolute; top: 18px; right: 24px; z-index: 4; display: flex; align-items: center; gap: 8px; flex-direction: row-reverse; }
+.paint-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: grid; place-items: center; transition: border-color .2s, opacity .2s; }
+.paint-btn:hover { border-color: var(--acc); }
+.paint-btn i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,.6);
+  background: conic-gradient(#b51724, #f4f1e8, #215fa6, #2f6b4c, #6b6e75, #b51724); }
+.paint-btn[aria-disabled="true"] { opacity: .45; }
+.swatches { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--glass);
+  border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transform-origin: right center; transition: opacity .2s, transform .25s cubic-bezier(.2,.7,.2,1); }
+.swatches[hidden] { display: flex; opacity: 0; transform: scaleX(.6); pointer-events: none; visibility: hidden; }
+.sw { width: 26px; height: 26px; border-radius: 50%; padding: 0; border: 2px solid transparent; outline: 1px solid rgba(255,255,255,.25); }
+.sw[aria-pressed="true"] { border-color: var(--bg); outline: 2px solid var(--acc); }
+.sw.factory { background: conic-gradient(from 45deg, #e9e9e6 0 50%, #1d1f22 0); }
+.paint-name { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 0 4px; min-width: 66px; }
+.paint-tip { position: absolute; top: 52px; right: 0; white-space: nowrap; font-size: 11px; color: var(--dim);
+  background: var(--glass); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+
+/* specs row */
+.specs { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 28px;
+  padding: 14px 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.specs div { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.specs strong { font-size: 18px; font-weight: 700; }
+.specs span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.specs .sep { width: 4px; height: 4px; border-radius: 50%; background: #444950; }
+.link { background: none; border: 0; padding: 4px 0; color: var(--acc); font-size: 13px; font-weight: 600; border-bottom: 1px solid rgba(198,255,61,.35); }
+
+/* dialogs */
+dialog { color: var(--fg); background: #0d0e11; border: 1px solid var(--line); padding: 0; }
+dialog::backdrop { background: rgba(4,5,6,.7); backdrop-filter: blur(6px); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.dlg-head h2 { margin: 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 28px; letter-spacing: .04em; text-transform: uppercase; }
+.close { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: none; font-size: 18px; }
+.close:hover { border-color: var(--acc); color: var(--acc); }
+
+.garage { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: rgba(7,8,10,.96); }
+.garage[open] { display: flex; flex-direction: column; animation: fade .25s ease both; }
+.garage .dlg-head { padding: 20px 32px; }
+.tabs { display: flex; gap: 6px; padding: 16px 32px 0; overflow-x: auto; scrollbar-width: none; }
+.tab { flex: none; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--dim);
+  font-size: 13px; font-weight: 600; white-space: nowrap; }
+.tab small { color: var(--mute); margin-left: 4px; font-weight: 500; }
+.tab[aria-selected="true"] { background: var(--acc); color: #0a0b0c; border-color: var(--acc); }
+.tab[aria-selected="true"] small { color: #0a0b0c99; }
+.grid { flex: 1; overflow-y: auto; padding: 20px 32px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; align-content: start; }
+.card { position: relative; text-align: left; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.025);
+  padding: 14px; display: flex; flex-direction: column; gap: 8px; transition: border-color .2s, background .2s, transform .2s; animation: rise .35s ease both; }
+.card:hover { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.05); transform: translateY(-2px); }
+.card[aria-current="true"] { border-color: rgba(198,255,61,.5); background: rgba(198,255,61,.06); }
+.card img { width: 100%; aspect-ratio: 2.3; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,.6)); }
+.card .cb { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.card h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.card .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.card .row strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; color: var(--fg); }
+.card .tag { position: absolute; top: 12px; right: 12px; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); }
+
+.drawer { margin: 0 0 0 auto; height: 100dvh; max-height: none; width: min(400px, 100vw); border-width: 0 0 0 1px; }
+.drawer[open] { animation: slide .3s cubic-bezier(.2,.7,.2,1) both; }
+.drawer dl { margin: 0; padding: 8px 24px 24px; }
+.drawer dl div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.drawer dt { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.drawer dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.drawer .low { color: #ffb23d; }
+
+/* booking bar */
+.bar { position: fixed; z-index: 20; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(1120px, calc(100% - 32px));
+  display: grid; grid-template-columns: 1.3fr 1fr 1fr auto auto; align-items: center; gap: 4px; padding: 8px; border-radius: 18px;
+  background: var(--glass); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.field { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 12px; min-width: 0; }
+.field:hover { background: rgba(255,255,255,.04); }
+.field span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.field select, .field input { background: none; border: 0; color: var(--fg); font: 600 14px 'DM Sans', sans-serif; padding: 0; min-width: 0; width: 100%; }
+.field select option { background: #15171b; }
+.total { display: flex; flex-direction: column; align-items: flex-end; padding: 0 14px; white-space: nowrap; }
+.total span { font-size: 11px; color: var(--dim); }
+.total strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 26px; line-height: 1.1; }
+.cta { height: 54px; padding: 0 24px; border: 0; border-radius: 12px; white-space: nowrap; background: var(--acc); color: #0a0b0c;
+  font-weight: 700; font-size: 15px; box-shadow: 0 0 24px rgba(198,255,61,.35); transition: transform .15s, box-shadow .2s; }
+.cta:hover { box-shadow: 0 0 36px rgba(198,255,61,.55); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes ghost { from { opacity: 0; transform: translateX(60px); letter-spacing: .12em; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes slide { from { transform: translateX(40px); opacity: 0; } }
+@keyframes sheet { from { transform: translateY(60px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* mobile */
+@media (max-width: 720px) {
+  body { padding-bottom: 200px; }
+  header { padding: 12px 16px; gap: 10px; }
+  .logo { font-size: 0; } .logo span { font-size: 20px; margin: 0; }
+  .picker { flex: 1; margin: 0; padding: 8px 12px; justify-content: center; }
+  .picker small { letter-spacing: .14em; font-size: 10px; }
+  .counter { gap: 6px; font-size: 12px; } .counter b { font-size: 16px; }
+  .arrow { width: 34px; height: 34px; font-size: 18px; }
+  .stage { height: clamp(300px, calc(100dvh - 400px), 460px); }
+  .ghost { font-size: 22vw; }
+  .view { inset: 52px 0 12px; }
+  .hint { display: none; }
+  .rate { left: 16px; bottom: 12px; } .rate strong { font-size: 28px; }
+  .soon { left: auto; right: 12px; bottom: 6px; transform: none; font-size: 10px; letter-spacing: .08em; }
+  .paint { top: 12px; right: 12px; }
+  .paint-btn { width: 40px; height: 40px; }
+  .swatches { gap: 4px; padding: 5px 8px; } .sw { width: 24px; height: 24px; }
+  .paint-name { display: none; }
+  .strip { position: static; transform: none; flex-direction: row; justify-content: center; padding: 10px 16px 4px; }
+  .thumb { width: auto; flex: 1; max-width: 84px; height: 56px; }
+  .specs { flex-wrap: wrap; gap: 6px 14px; padding: 12px 16px; }
+  .specs .sep { display: none; }
+  .specs strong { font-size: 15px; }
+  .specs span { letter-spacing: .12em; }
+  .garage .dlg-head { padding: 14px 16px; }
+  .tabs { padding: 12px 16px 0; }
+  .grid { padding: 14px 16px 32px; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card { padding: 10px; border-radius: 12px; gap: 4px; }
+  .card h3 { font-size: 14px; } .card .row strong { font-size: 18px; } .card .row { font-size: 11px; flex-direction: column; gap: 0; }
+  .card .tag { top: 8px; right: 8px; }
+  .drawer { margin: auto 0 0; width: 100vw; max-width: none; height: auto; max-height: 85dvh; border-width: 1px 0 0; border-radius: 20px 20px 0 0; }
+  .drawer[open] { animation-name: sheet; }
+  .bar { grid-template-columns: 1fr 1fr; bottom: 10px; border-radius: 16px; padding: 6px; gap: 2px; width: calc(100% - 20px); }
+  .field { padding: 4px 10px; }
+  .field:first-child { grid-column: 1 / -1; }
+  .total { align-items: flex-start; padding: 0 10px; }
+  .total strong { font-size: 22px; }
+  .cta { height: 46px; padding: 0 14px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+}
+</style>
+</head>
+<body>
+<div class="spot" aria-hidden="true"></div>
+
+<header>
+  <div class="logo"><span>◆</span> GARAGE<em>/</em>RENT</div>
+  <button class="picker" id="pickerBtn" aria-haspopup="dialog" aria-label="Change car">
+    <small id="pBrand"></small><b id="pModel"></b><i aria-hidden="true">▾</i>
+  </button>
+  <div class="counter">
+    <button class="arrow" id="prev" aria-label="Previous car">‹</button>
+    <span><b id="idx"></b> / <span id="count"></span></span>
+    <button class="arrow" id="next" aria-label="Next car">›</button>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="Car viewer">
+    <div class="title" id="title">
+      <div class="meta" id="meta"></div>
+      <div class="ghost" id="ghost" aria-hidden="true"></div>
+    </div>
+    <div class="floor" aria-hidden="true"></div>
+    <div class="view" id="view" data-mode="3d">
+      <model-viewer id="mv" camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="12deg"
+        shadow-intensity="1.1" shadow-softness="0.9" environment-image="neutral" exposure="1.05" interaction-prompt="none"
+        camera-orbit="55deg 82deg 64%" min-camera-orbit="auto 60deg 55%" max-camera-orbit="auto 86deg 77%"
+        field-of-view="26deg" min-field-of-view="26deg" max-field-of-view="26deg" alt="3D model of the selected car"></model-viewer>
+      <img class="photo" id="photo" alt="">
+      <div class="soon" id="soon" hidden>Side photo coming · showing front</div>
+    </div>
+    <div class="hint" id="hint">Drag to orbit · scroll to zoom</div>
+    <div class="rate"><span>From</span><strong id="rate"></strong><span>/ day</span></div>
+
+    <div class="paint" id="paint">
+      <button class="paint-btn" id="paintBtn" aria-expanded="false" aria-controls="swatches" aria-label="Paint colour"><i></i></button>
+      <div class="swatches" id="swatches" hidden>
+        <span class="paint-name" id="paintName">Factory</span>
+      </div>
+      <div class="paint-tip" id="paintTip" hidden>Paint preview works in 3D — photos show the real car</div>
+    </div>
+  </section>
+
+  <div class="strip" id="strip" role="group" aria-label="Views"></div>
+
+  <section class="specs" aria-label="Key specs" id="specs"></section>
+</main>
+
+<form class="bar" id="bar">
+  <label class="field"><span>Pick-up</span><select id="loc"></select></label>
+  <label class="field"><span>From</span><input type="date" id="from"></label>
+  <label class="field"><span>Return</span><input type="date" id="to"></label>
+  <div class="total"><span id="calc"></span><strong id="sum"></strong></div>
+  <button class="cta" id="cta" type="submit"></button>
+</form>
+
+<dialog class="garage" id="garage" aria-labelledby="gTitle">
+  <div class="dlg-head"><h2 id="gTitle">Garage</h2><button class="close" data-close aria-label="Close garage">✕</button></div>
+  <div class="tabs" id="tabs" role="tablist" aria-label="Brands"></div>
+  <div class="grid" id="grid"></div>
+</dialog>
+
+<dialog class="drawer" id="drawer" aria-labelledby="dTitle">
+  <div class="dlg-head"><h2 id="dTitle">Specs</h2><button class="close" data-close aria-label="Close specs">✕</button></div>
+  <dl id="dl"></dl>
+</dialog>
+
+<script>
+const FLEET = window.FLEET, PAINTS = window.PAINTS;
+const $ = (id) => document.getElementById(id);
+const money = (n) => '$' + n.toLocaleString('en-US');
+const km = (n) => n.toLocaleString('en-US') + ' km';
+const pad = (n) => String(n).padStart(2, '0');
+const DAY = 864e5;
+const localDate = (o) => new Date(Date.now() + o * DAY).toLocaleDateString('en-CA');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const CUBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>';
+// Radius % is of model-viewer's own auto-fit; FIT makes the car fill the stage like the current page.
+// Zoom band = 85–120% of FIT; polar 60–86deg so you never look from under the floor.
+const narrow = matchMedia('(max-width: 720px)');
+function frame() {
+  const fit = narrow.matches ? 96 : 64;
+  mv.minCameraOrbit = `auto 60deg ${Math.round(fit * .85)}%`;
+  mv.maxCameraOrbit = `auto 86deg ${Math.round(fit * 1.2)}%`;
+  mv.cameraOrbit = `55deg 82deg ${fit}%`;
+}
+narrow.addEventListener('change', frame);
+const VIEWS = ['3d', 'front', 'side', 'rear'];
+
+const state = { i: 0, view: '3d', paint: 0, brand: 'All' };
+const car = () => FLEET[state.i];
+const mv = $('mv');
+
+// ----- render car -----
+function render() {
+  const c = car();
+  $('pBrand').textContent = c.brand; $('pModel').textContent = c.model;
+  $('idx').textContent = pad(state.i + 1); $('count').textContent = pad(FLEET.length);
+  $('meta').innerHTML = `<span>${esc(c.brand)}</span><i></i>${c.year}<i></i>${esc(c.category)}<i></i>${esc(c.fuel)}`;
+  const g = $('ghost'); g.textContent = c.model; g.style.animation = 'none'; g.offsetWidth; g.style.animation = '';
+  $('rate').textContent = money(c.dailyRate);
+  if (mv.getAttribute('src') !== c.glb) { mv.setAttribute('src', c.glb); frame(); }
+  $('specs').innerHTML = `
+    <div><strong>${c.specs.hp}</strong><span>hp</span></div><i class="sep"></i>
+    <div><strong>${c.specs.accel.toFixed(1)}s</strong><span>0–100</span></div><i class="sep"></i>
+    <div><strong>${c.specs.topSpeed}</strong><span>km/h</span></div><i class="sep"></i>
+    <div><strong>${c.odometer.toLocaleString('en-US')}</strong><span>km driven</span></div>
+    <button class="link" id="allSpecs" type="button" aria-haspopup="dialog">All specs →</button>`;
+  $('allSpecs').onclick = () => { renderDrawer(); $('drawer').showModal(); };
+  renderStrip(); setView(state.view); quote();
+}
+
+// filmstrip: photo thumbs fall back to the front shot until side/rear are sourced
+function renderStrip() {
+  const c = car();
+  $('strip').innerHTML = VIEWS.map((v) => v === '3d'
+    ? `<button class="thumb" data-view="3d" aria-label="3D view">${CUBE}<span>3D</span></button>`
+    : `<button class="thumb" data-view="${v}" aria-label="${v} photo"><img src="${c.photos[v]}" alt="" data-fallback="${c.photos.front}"><span>${v}</span></button>`
+  ).join('');
+  $('strip').querySelectorAll('img').forEach((img) => img.addEventListener('error', () => {
+    img.closest('.thumb').classList.add('is-soon'); img.src = img.dataset.fallback;
+  }, { once: true }));
+  $('strip').querySelectorAll('.thumb').forEach((b) => b.onclick = () => setView(b.dataset.view));
+}
+
+function setView(v) {
+  state.view = v;
+  const c = car(), is3d = v === '3d';
+  $('view').dataset.mode = v;
+  $('hint').hidden = !is3d;
+  $('strip').querySelectorAll('.thumb').forEach((b) => b.setAttribute('aria-pressed', b.dataset.view === v));
+  $('soon').hidden = true;
+  if (!is3d) {
+    const img = $('photo');
+    img.alt = `${c.brand} ${c.model}, ${v} photo`;
+    img.onerror = () => { img.onerror = null; img.src = c.photos.front; $('soon').textContent = `${v} photo coming · showing front`; $('soon').hidden = false; };
+    img.src = c.photos[v];
+    img.style.animation = 'none'; img.offsetWidth; img.style.animation = '';
+  }
+  // paint is 3D-only: collapse + disable on photos
+  const pb = $('paintBtn');
+  pb.setAttribute('aria-disabled', !is3d);
+  if (!is3d) togglePaint(false);
+  $('paintTip').hidden = true;
+}
+
+// ----- paint -----
+$('swatches').insertAdjacentHTML('afterbegin', PAINTS.map(([n, hex], k) =>
+  `<button class="sw${hex ? '' : ' factory'}" data-k="${k}" aria-label="${n}" title="${n}" ${hex ? `style="background:${hex}"` : ''}></button>`).join(''));
+$('swatches').querySelectorAll('.sw').forEach((b) => b.onclick = () => { state.paint = +b.dataset.k; applyPaint(); });
+
+function togglePaint(open) {
+  $('swatches').hidden = !open; $('paintBtn').setAttribute('aria-expanded', open);
+}
+$('paintBtn').onclick = () => {
+  if (state.view !== '3d') { $('paintTip').hidden = !$('paintTip').hidden; return; }
+  togglePaint($('swatches').hidden);
+};
+const rgb = (hex) => [1, 3, 5].map((o) => parseInt(hex.slice(o, o + 2), 16) / 255);
+function applyPaint() {
+  const [name, hex] = PAINTS[state.paint];
+  $('paintName').textContent = name;
+  $('swatches').querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.k === state.paint));
+  // ponytail: tints every material (glass/tyres too); target a named body material once GLBs expose one
+  const factor = hex ? [...rgb(hex), 1] : [1, 1, 1, 1];
+  mv.model?.materials.forEach((m) => m.pbrMetallicRoughness.setBaseColorFactor(factor));
+}
+mv.addEventListener('load', applyPaint);
+
+// ----- garage picker -----
+const brands = ['All', ...new Set(FLEET.map((c) => c.brand))];
+function renderGarage() {
+  $('tabs').innerHTML = brands.map((b) => {
+    const n = b === 'All' ? FLEET.length : FLEET.filter((c) => c.brand === b).length;
+    return `<button class="tab" role="tab" aria-selected="${b === state.brand}" data-b="${esc(b)}">${esc(b)}<small>${n}</small></button>`;
+  }).join('');
+  $('tabs').querySelectorAll('.tab').forEach((t) => t.onclick = () => { state.brand = t.dataset.b; renderGarage(); });
+  $('grid').innerHTML = FLEET.map((c, k) => (state.brand === 'All' || c.brand === state.brand) ? `
+    <button class="card" data-k="${k}" aria-current="${k === state.i}" style="animation-delay:${(k % 12) * 25}ms">
+      ${k === state.i ? '<span class="tag">Viewing</span>' : ''}
+      <img src="${c.photos.front}" alt="" loading="lazy">
+      <span class="cb">${esc(c.brand)} · ${esc(c.category)}</span>
+      <h3>${esc(c.model)}</h3>
+      <span class="row"><span><strong>${money(c.dailyRate)}</strong> /day</span><span>${c.specs.hp} hp · ${km(c.odometer)}</span></span>
+    </button>` : '').join('');
+  $('grid').querySelectorAll('.card').forEach((b) => b.onclick = () => { go(+b.dataset.k); $('garage').close(); });
+}
+$('pickerBtn').onclick = () => { state.brand = 'All'; renderGarage(); $('garage').showModal(); $('garage').querySelector('[aria-current="true"]')?.focus(); };
+document.querySelectorAll('[data-close]').forEach((b) => b.onclick = () => b.closest('dialog').close());
+document.querySelectorAll('dialog').forEach((d) => d.addEventListener('click', (e) => { if (e.target === d && d.id === 'drawer') d.close(); }));
+
+// ----- specs drawer -----
+function renderDrawer() {
+  const c = car(), s = c.specs;
+  const rows = [['Power', s.hp + ' hp'], ['0–100', s.accel.toFixed(1) + ' s'], ['Top speed', s.topSpeed + ' km/h'], ['Drive', s.drive],
+    ['Gearbox', s.gearbox], ['Efficiency', s.efficiency], ['Boot', s.boot + ' L'], ['Seats', c.seats], ['Fuel', c.fuel],
+    ['Rating', '★ ' + c.rating.toFixed(1)], ['Trips', c.trips], ['Available', c.available], ['Odometer', km(c.odometer)]];
+  $('dTitle').textContent = c.model;
+  $('dl').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd${k === 'Available' && c.available <= 2 ? ' class="low"' : ''}>${esc(v)}</dd></div>`).join('');
+}
+
+// ----- nav + booking -----
+function go(k) { state.i = (k + FLEET.length) % FLEET.length; render(); }
+$('prev').onclick = () => go(state.i - 1);
+$('next').onclick = () => go(state.i + 1);
+
+$('loc').innerHTML = window.LOCATIONS.map((l) => `<option>${esc(l)}</option>`).join('');
+$('from').value = localDate(1); $('to').value = localDate(4); $('from').min = localDate(0);
+function quote() {
+  const c = car(), ms = Date.parse($('to').value) - Date.parse($('from').value);
+  const days = Number.isFinite(ms) && ms > 0 ? Math.ceil(ms / DAY) : 0;
+  $('calc').textContent = `${days} ${days === 1 ? 'day' : 'days'} × ${money(c.dailyRate)}`;
+  $('sum').textContent = money(days * c.dailyRate);
+  $('cta').textContent = `Book ${c.model} →`;
+  $('cta').disabled = !days;
+}
+$('from').oninput = $('to').oninput = quote;
+$('bar').onsubmit = (e) => { e.preventDefault(); $('cta').textContent = 'Reserved ✓'; setTimeout(quote, 1400); };
+
+render();
+</script>
+</body>
+</html>

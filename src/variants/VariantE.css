@@ -135,8 +135,12 @@
 .ve-data div { padding: 9px 0; border-bottom: 1px solid var(--ve-line); min-width: 0; }
 .ve-data dt { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ve-dim); }
 .ve-data dd { margin: 2px 0 0; font-size: 14px; font-weight: 600; }
-.ve-colors { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ve-dim); }
-.ve-colors i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); }
+.ve-colors { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ve-dim); }
+.ve-colors span { width: 100%; margin-bottom: 2px; }
+.ve-colors button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.ve-colors button:hover { transform: scale(1.12); }
+.ve-colors button[aria-pressed='true'] { box-shadow: 0 0 0 2px #0a0b0d, 0 0 0 4px var(--ve-acc); }
+.ve-colors .ve-factory { background: conic-gradient(#e9e9e6 0 25%, #1d1f22 0 50%, #8a8d91 0 75%, #b51724 0); }
 
 /* booking bar — sits above the prototype switcher pill */
 .ve-bar {
@@ -194,13 +198,18 @@
   .ve-rate { left: 16px; bottom: 16px; }
   .ve-rate strong { font-size: 30px; }
   .ve-hint { display: none; }
-  .ve-select { padding: 8px 16px; flex-direction: row; flex-wrap: wrap; gap: 6px; }
-  .ve-kicker { width: 100%; margin-bottom: 0; }
-  .ve-brand { border-left: 0; border-bottom: 2px solid var(--ve-line); }
-  .ve-brand-btn { padding: 6px 8px; }
-  .ve-brand-btn span { font-size: 16px; }
+  /* One swipeable strip of every model; brands become dividers. No accordion, so nothing reflows under the fixed bar. */
+  .ve-select { padding: 8px 16px; flex-direction: row; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .ve-select::-webkit-scrollbar { display: none; }
+  .ve-kicker { display: none; }
+  .ve-brand, .ve-brand.is-open { flex: none; display: flex; align-items: center; gap: 6px; border-left: 0; }
+  .ve-brand-btn { width: auto; flex: none; padding: 0 2px; pointer-events: none; }
+  .ve-brand-btn span { font-size: 13px; writing-mode: vertical-rl; transform: rotate(180deg); color: var(--ve-dim); }
   .ve-brand-btn small { display: none; }
-  .ve-brand.is-open { order: 1; width: 100%; }
+  .ve-models, .ve-brand.is-open .ve-models { display: block; flex: none; }
+  .ve-models > div, .ve-brand.is-open .ve-models > div { flex-direction: row; padding: 0; overflow: visible; }
+  .ve-model { flex: none; scroll-snap-align: start; }
+  .ve-model img { width: 52px; height: 32px; }
   .ve-specs { display: flex; padding: 16px; }
   .ve-bar { grid-template-columns: 1fr 1fr; bottom: 68px; border-radius: 16px; }
   .ve-field:first-child { grid-column: 1 / -1; }

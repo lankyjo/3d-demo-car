@@ -1,0 +1,386 @@
+<!-- PROTOTYPE — throwaway UX exploration for Variant E -->
+<!-- Concept 3 "Swipe deck": stage = scroll-snap carousel [3D][Front][Side][Rear]; spec ticker; list (desktop) / bottom sheet (mobile). -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Swipe Deck · Variant E</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<script src="./data.js"></script>
+<style>
+:root {
+  --bg: #07080a; --fg: #eef0f2; --dim: #8b9099; --mute: #5d626a;
+  --line: rgba(255,255,255,.09); --acc: #c6ff3d;
+  --glass: rgba(20,22,26,.72);
+  --bar-h: 88px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'DM Sans', system-ui, sans-serif; overflow-x: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.spot { position: fixed; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 45% at 58% 42%, rgba(198,255,61,.07), transparent 70%),
+    radial-gradient(ellipse 70% 60% at 58% 30%, rgba(255,255,255,.06), transparent 70%); }
+
+/* header */
+header { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  height: 64px; padding: 0 32px; border-bottom: 1px solid var(--line); }
+.logo { font-family: Anton, sans-serif; font-size: 20px; letter-spacing: .08em; }
+.logo span { color: var(--acc); margin-right: 4px; }
+.logo em { color: var(--dim); font-style: normal; margin: 0 2px; }
+.meta { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.meta b { color: var(--acc); }
+.meta i { width: 4px; height: 4px; border-radius: 50%; background: #444950; }
+.change { display: none; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid rgba(198,255,61,.4); background: rgba(198,255,61,.08); font-size: 13px; font-weight: 600; }
+.change svg { width: 12px; height: 12px; }
+
+/* layout */
+main { position: relative; z-index: 2; display: grid; grid-template-columns: 270px minmax(0,1fr);
+  height: calc(100dvh - 64px - var(--bar-h) - 32px); min-height: 520px; }
+
+/* desktop list */
+.list { padding: 20px 0 20px 32px; overflow-y: auto; scrollbar-width: none; }
+.kicker { font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin: 0 0 8px; }
+.brand { font-family: Anton, sans-serif; font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin: 14px 0 4px 10px; }
+.brand:first-of-type { margin-top: 4px; }
+.row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px;
+  border: 1px solid transparent; background: none; text-align: left; transition: background .2s, border-color .2s; }
+.row:hover { background: rgba(255,255,255,.04); }
+.row[aria-current="true"] { background: rgba(198,255,61,.08); border-color: rgba(198,255,61,.35); }
+.row img { width: 60px; height: 34px; object-fit: contain; flex: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.row span { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.row b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row small { white-space: nowrap; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.row .price { flex: none; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* stage */
+.stage-wrap { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.stage { position: relative; flex: 1; min-height: 0; }
+.ghost { position: absolute; inset: 14px 0 auto; text-align: center; pointer-events: none; z-index: 0;
+  font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; white-space: nowrap; overflow: hidden;
+  font-size: clamp(84px, 15vw, 240px); color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.14);
+  animation: ghost .8s cubic-bezier(.2,.7,.2,1) both; }
+.floor { position: absolute; left: 10%; right: 10%; bottom: 6%; height: 30%; pointer-events: none;
+  background: radial-gradient(ellipse 50% 40% at 50% 60%, rgba(198,255,61,.14), transparent 70%); }
+.deck { position: absolute; inset: 0; z-index: 1; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-x: contain; }
+.deck::-webkit-scrollbar { display: none; }
+.slide { position: relative; flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; }
+model-viewer { position: absolute; inset: 40px 0 8px; width: 100%; height: auto; background: transparent;
+  --poster-color: transparent; --progress-bar-height: 0px; }
+/* 3D slide: edges belong to the deck (swipe), centre belongs to the model (drag to rotate) */
+.edge { position: absolute; top: 0; bottom: 0; width: 15%; z-index: 2; touch-action: pan-x; background: none; border: 0;
+  display: flex; align-items: center; color: var(--mute); font-size: 26px; padding: 0 10px; }
+.edge.l { left: 0; justify-content: flex-start; }
+.edge.r { right: 0; justify-content: flex-end; }
+.edge:hover { color: var(--acc); background: linear-gradient(90deg, rgba(198,255,61,.05), transparent); }
+.edge.r:hover { background: linear-gradient(-90deg, rgba(198,255,61,.05), transparent); }
+.photo { position: absolute; inset: 40px 6% 24px; width: 88%; height: calc(100% - 64px); object-fit: contain;
+  filter: drop-shadow(0 24px 30px rgba(0,0,0,.7)); }
+.tag { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim);
+  padding: 6px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); }
+.tag.soon { color: #ffb23d; border-color: rgba(255,178,61,.35); }
+
+/* paint pill (3D slide only) */
+.paint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 3;
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 14px; border-radius: 999px;
+  background: var(--glass); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(14px); }
+.paint > span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-right: 4px; min-width: 62px; }
+.sw { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); padding: 0; position: relative; transition: transform .15s; }
+.sw:hover { transform: scale(1.12); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc); }
+.sw.factory { background: conic-gradient(#e9e9e6 0 25%, #8a8d91 0 50%, #1d1f22 0 75%, #b9bcc0 0); }
+
+/* deck chrome */
+.nav { position: absolute; z-index: 4; right: 16px; top: 12px; display: flex; align-items: center; gap: 10px; }
+.count { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
+.count b { color: var(--fg); font-family: Anton, sans-serif; font-weight: 400; font-size: 16px; letter-spacing: .04em; }
+.arrow { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.03); font-size: 18px; line-height: 1; transition: border-color .2s, color .2s; }
+.arrow:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); }
+.arrow:disabled { opacity: .3; cursor: default; }
+.dots { position: absolute; z-index: 4; left: 16px; top: 18px; display: flex; gap: 6px; }
+.dot { height: 6px; width: 6px; border-radius: 99px; border: 0; padding: 0; background: rgba(255,255,255,.22); transition: width .25s, background .25s; }
+.dot[aria-current="true"] { width: 22px; background: var(--acc); }
+.dot::after { content: ''; display: block; margin: -10px -4px; height: 26px; } /* hit area */
+.rate { position: absolute; z-index: 4; left: 20px; bottom: 16px; display: flex; align-items: baseline; gap: 6px; color: var(--dim); font-size: 12px; pointer-events: none; }
+.rate strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 36px; color: var(--fg); }
+
+/* spec ticker */
+.ticker { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 12px 20px 4px;
+  mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 40px), transparent); }
+.ticker::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: flex; align-items: baseline; gap: 6px; padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(255,255,255,.02); white-space: nowrap; font-variant-numeric: tabular-nums;
+  animation: rise .4s ease both; }
+.chip b { font-size: 14px; font-weight: 700; }
+.chip span { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.chip.hi { border-color: rgba(198,255,61,.35); background: rgba(198,255,61,.06); }
+.chip.hi b { color: var(--acc); }
+.chip.low b { color: #ffb23d; }
+
+/* booking bar */
+.bar { position: fixed; z-index: 20; left: 50%; bottom: 16px; transform: translateX(-50%);
+  width: min(1120px, calc(100% - 32px)); display: grid; grid-template-columns: 1.3fr 1fr 1fr auto auto; align-items: center; gap: 4px;
+  padding: 8px; border-radius: 18px; background: var(--glass); border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.field { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 12px; min-width: 0; }
+.field:hover { background: rgba(255,255,255,.04); }
+.field span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.field select, .field input { background: none; border: 0; color: var(--fg); font: inherit; font-size: 14px; font-weight: 600; padding: 0; min-width: 0; width: 100%; color-scheme: dark; }
+.field select option { background: #15171b; }
+.total { display: flex; flex-direction: column; align-items: flex-end; padding: 0 14px; white-space: nowrap; }
+.total span { font-size: 11px; color: var(--dim); }
+.total strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 26px; line-height: 1.1; }
+.cta { height: 54px; padding: 0 24px; border: 0; border-radius: 12px; white-space: nowrap; background: var(--acc); color: #0a0b0c;
+  font-weight: 700; font-size: 15px; box-shadow: 0 0 24px rgba(198,255,61,.35); transition: transform .15s, box-shadow .2s; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.cta:hover { box-shadow: 0 0 36px rgba(198,255,61,.55); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+/* bottom sheet (native <dialog>) */
+dialog.sheet { margin: auto 0 0; width: 100%; max-width: 100%; max-height: 82dvh; padding: 0; border: 0; border-radius: 22px 22px 0 0;
+  background: #101215; color: var(--fg); border-top: 1px solid rgba(255,255,255,.1); display: none; flex-direction: column; }
+dialog.sheet[open] { display: flex; animation: up .32s cubic-bezier(.2,.8,.2,1); }
+dialog.sheet::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(3px); }
+.grab { width: 40px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.2); margin: 10px auto 4px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 10px; }
+.sheet-head h2 { margin: 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; letter-spacing: .04em; text-transform: uppercase; }
+.x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: none; font-size: 18px; }
+.tabs { display: flex; gap: 6px; padding: 0 16px 12px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+.tab { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: none; font-size: 13px; font-weight: 600; color: var(--dim); }
+.tab[aria-selected="true"] { color: #0a0b0c; background: var(--acc); border-color: var(--acc); }
+.sheet-list { overflow-y: auto; padding: 8px 12px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 4px; }
+.sheet-list .row { padding: 10px; }
+.sheet-list .row img { width: 76px; height: 44px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes ghost { from { opacity: 0; transform: translateX(60px); letter-spacing: .12em; } }
+@keyframes up { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* mobile */
+@media (max-width: 760px) {
+  :root { --bar-h: 112px; }
+  header { padding: 0 16px; height: 56px; }
+  .meta { display: none; }
+  .change { display: inline-flex; }
+  main { display: block; height: auto; min-height: 0; padding-bottom: calc(var(--bar-h) + 24px); }
+  .list { display: none; }
+  .stage { height: max(340px, calc(100dvh - 56px - 34px - 58px - var(--bar-h) - 34px)); flex: none; }
+  .mobile-meta { display: flex !important; justify-content: center; padding: 14px 0 0; }
+  .ghost { font-size: 24vw; top: 54px; }
+  model-viewer { inset: 70px 0 40px; }
+  .photo { inset: 70px 4% 50px; width: 92%; height: calc(100% - 120px); }
+  .tag { top: 46px; }
+  .nav .arrow { display: none; }
+  .nav { top: 14px; }
+  .dots { top: 20px; }
+  .rate { display: none; }
+  .ticker { padding: 10px 16px 4px; }
+  .bar { bottom: 10px; width: calc(100% - 20px); grid-template-columns: 1.15fr 1fr 1fr; gap: 2px 0; padding: 6px; border-radius: 16px; }
+  .field { padding: 4px 8px; }
+  .field span { font-size: 9px; letter-spacing: .14em; }
+  .field select, .field input { font-size: 12px; }
+  .total { grid-column: 1; align-items: flex-start; padding: 0 8px; }
+  .total strong { font-size: 22px; }
+  .cta { grid-column: 2 / -1; height: 46px; padding: 0 14px; font-size: 14px; max-width: none; }
+}
+.mobile-meta { display: none; }
+</style>
+</head>
+<body>
+<div class="spot" aria-hidden="true"></div>
+
+<header>
+  <div class="logo"><span>◆</span> GARAGE<em>/</em>RENT</div>
+  <div class="meta" id="meta"></div>
+  <button class="change" id="change" aria-haspopup="dialog">
+    <span id="changeLabel">Change car</span>
+    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+  </button>
+</header>
+
+<main>
+  <nav class="list" id="list" aria-label="Choose a car"></nav>
+
+  <section class="stage-wrap">
+    <div class="meta mobile-meta" id="meta2"></div>
+    <div class="stage" id="stage">
+      <div class="ghost" id="ghost" aria-hidden="true"></div>
+      <div class="floor" aria-hidden="true"></div>
+
+      <div class="deck" id="deck" aria-roledescription="carousel" aria-label="Car views">
+        <div class="slide" aria-label="3D view">
+          <model-viewer id="mv" camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="18deg"
+            shadow-intensity="1" shadow-softness="0.9" environment-image="neutral" exposure="1" interaction-prompt="none"
+            touch-action="pan-y" field-of-view="15deg" min-field-of-view="15deg" max-field-of-view="15deg"
+            camera-target="auto auto auto" alt="3D model of the selected car"></model-viewer>
+          <button class="edge l" tabindex="-1" aria-hidden="true" data-go="-1"></button>
+          <button class="edge r" tabindex="-1" aria-hidden="true" data-go="1">›</button>
+          <div class="tag">Drag to rotate · edges to swipe</div>
+          <div class="paint" role="group" aria-label="Preview paint">
+            <span id="paintName">Factory</span>
+            <div id="swatches" style="display:flex;gap:6px"></div>
+          </div>
+        </div>
+        <div class="slide" data-view="front" aria-label="Front photo"><img class="photo" alt=""><div class="tag"></div></div>
+        <div class="slide" data-view="side" aria-label="Side photo"><img class="photo" alt=""><div class="tag"></div></div>
+        <div class="slide" data-view="rear" aria-label="Rear photo"><img class="photo" alt=""><div class="tag"></div></div>
+      </div>
+
+      <div class="dots" id="dots"></div>
+      <div class="nav">
+        <span class="count" id="count"></span>
+        <button class="arrow" id="prev" aria-label="Previous view">‹</button>
+        <button class="arrow" id="next" aria-label="Next view">›</button>
+      </div>
+      <div class="rate"><span>From</span><strong id="rate"></strong><span>/ day</span></div>
+    </div>
+
+    <div class="ticker" id="ticker" aria-label="Specifications"></div>
+  </section>
+</main>
+
+<form class="bar" id="bar">
+  <label class="field"><span>Pick-up</span><select id="loc"></select></label>
+  <label class="field"><span>From</span><input type="date" id="from"></label>
+  <label class="field"><span>Return</span><input type="date" id="to"></label>
+  <div class="total"><span id="calc"></span><strong id="sum"></strong></div>
+  <button class="cta" id="cta" type="submit"></button>
+</form>
+
+<dialog class="sheet" id="sheet" aria-label="Choose a car">
+  <div class="grab" aria-hidden="true"></div>
+  <div class="sheet-head"><h2>Choose a car</h2><button class="x" id="close" aria-label="Close">×</button></div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="sheet-list" id="sheetList"></div>
+</dialog>
+
+<script>
+const FLEET = window.FLEET, PAINTS = window.PAINTS, $ = (id) => document.getElementById(id);
+const VIEWS = ['3D', 'Front', 'Side', 'Rear'];
+const brands = [...new Set(FLEET.map((c) => c.brand))];
+const money = (n) => '$' + n.toLocaleString('en-US');
+const km = (n) => n.toLocaleString('en-US') + ' km';
+const iso = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toLocaleDateString('en-CA'); };
+let car = FLEET[0], paint = 0, slide = 0, sheetBrand = car.brand;
+
+const row = (c) => `<button class="row" data-id="${c.id}" aria-current="${c.id === car.id}">
+  <img src="${c.photos.front}" alt="" loading="lazy">
+  <span><b>${c.model}</b><small>${c.year} · ${km(c.odometer)}</small></span>
+  <span class="price" style="flex:none">${money(c.dailyRate)}<small>/day</small></span></button>`;
+
+function renderList() {
+  $('list').innerHTML = '<p class="kicker">Select vehicle</p>' + brands.map((b) =>
+    `<div class="brand">${b}</div>` + FLEET.filter((c) => c.brand === b).map(row).join('')).join('');
+  $('tabs').innerHTML = brands.map((b) => `<button class="tab" role="tab" data-brand="${b}" aria-selected="${b === sheetBrand}">${b}</button>`).join('');
+  $('sheetList').innerHTML = FLEET.filter((c) => c.brand === sheetBrand).map(row).join('');
+}
+
+// "fit" = what fills the stage: model-viewer's auto radius frames a loose bounding sphere, so on wide (desktop) stages
+// our fit is 72% of it; on narrow (mobile) stages width is the limit, so 118%. Zoom band ≈ 85%–120% of our fit; polar 50°–88° (never below floor).
+const mqMobile = matchMedia('(max-width: 760px)');
+function frame() {
+  const fit = mqMobile.matches ? 118 : 72, r = (k) => Math.round(fit * k) + '%', mv = $('mv');
+  mv.minCameraOrbit = `auto 50deg ${r(0.85)}`; mv.maxCameraOrbit = `auto 88deg ${r(1.2)}`;
+  mv.cameraOrbit = `70deg 80deg ${r(1)}`;
+}
+mqMobile.addEventListener('change', frame);
+
+function renderCar() {
+  const s = car.specs;
+  const meta = `<b>${car.brand}</b><i></i>${car.year}<i></i>${car.category}<i></i>${car.fuel}`;
+  $('meta').innerHTML = meta; $('meta2').innerHTML = meta;
+  $('changeLabel').textContent = car.model;
+  const g = $('ghost'); g.textContent = car.model; g.style.animation = 'none'; g.offsetWidth; g.style.animation = '';
+  $('rate').textContent = money(car.dailyRate);
+  const mv = $('mv'); mv.src = car.glb; frame(); mv.resetTurntableRotation?.();
+  document.querySelectorAll('.slide[data-view]').forEach((el) => {
+    const img = el.querySelector('img'), tag = el.querySelector('.tag'), v = el.dataset.view;
+    img.alt = `${car.brand} ${car.model}, ${v} view`;
+    tag.className = 'tag'; tag.textContent = `Real photo · ${v} · paint preview is 3D only`;
+    img.onerror = () => { img.onerror = null; img.src = car.photos.front; tag.className = 'tag soon'; tag.textContent = `${v} photo coming · showing front`; };
+    img.src = car.photos[v];
+  });
+  const chips = [
+    ['★ ' + car.rating.toFixed(1), 'rating'], [car.trips, 'trips'], [car.available, 'available', car.available <= 2 ? 'low' : ''],
+    [s.hp, 'hp'], [s.accel.toFixed(1) + 's', '0–100'], [s.topSpeed, 'km/h top'],
+    [km(car.odometer), 'odometer', 'hi'], [s.drive, 'drive'], [s.gearbox, 'gearbox'], [s.efficiency, 'efficiency'],
+    [s.boot + ' L', 'boot'], [car.seats, 'seats'], [car.fuel, 'fuel'],
+  ];
+  $('ticker').innerHTML = chips.map(([v, l, cls = ''], i) => `<div class="chip ${cls}" style="animation-delay:${i * 25}ms"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('ticker').scrollLeft = 0;
+  renderList(); quote();
+}
+
+function setPaint(i) {
+  paint = i;
+  const [name, hex] = PAINTS[i];
+  $('paintName').textContent = name;
+  $('swatches').querySelectorAll('.sw').forEach((b, j) => b.setAttribute('aria-pressed', j === i));
+  const rgb = hex ? [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255).concat(1) : [1, 1, 1, 1];
+  $('mv').model?.materials.forEach((m) => m.pbrMetallicRoughness.setBaseColorFactor(rgb));
+}
+$('swatches').innerHTML = PAINTS.map(([n, h], i) =>
+  `<button class="sw ${h ? '' : 'factory'}" style="${h ? 'background:' + h : ''}" title="${n}" aria-label="${n}" aria-pressed="${i === 0}" data-i="${i}"></button>`).join('');
+$('swatches').onclick = (e) => { const b = e.target.closest('.sw'); if (b) setPaint(+b.dataset.i); };
+$('mv').addEventListener('load', () => { $('mv').jumpCameraToGoal(); setPaint(paint); });
+
+// deck
+const deck = $('deck');
+$('dots').innerHTML = VIEWS.map((v, i) => `<button class="dot" aria-label="${v} view" data-i="${i}"></button>`).join('');
+const goSlide = (i) => deck.scrollTo({ left: Math.max(0, Math.min(3, i)) * deck.clientWidth });
+function syncSlide() {
+  slide = Math.round(deck.scrollLeft / deck.clientWidth);
+  $('count').innerHTML = `<b>${slide + 1}</b>/4 · ${VIEWS[slide]}`;
+  $('dots').querySelectorAll('.dot').forEach((d, i) => d.setAttribute('aria-current', i === slide));
+  $('prev').disabled = slide === 0; $('next').disabled = slide === 3;
+}
+deck.addEventListener('scroll', syncSlide, { passive: true });
+$('dots').onclick = (e) => { const d = e.target.closest('.dot'); if (d) goSlide(+d.dataset.i); };
+$('prev').onclick = () => goSlide(slide - 1);
+$('next').onclick = () => goSlide(slide + 1);
+deck.querySelectorAll('.edge').forEach((b) => b.onclick = () => goSlide(slide + +b.dataset.go));
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input,select,dialog')) return;
+  if (e.key === 'ArrowRight') goSlide(slide + 1);
+  if (e.key === 'ArrowLeft') goSlide(slide - 1);
+});
+addEventListener('resize', () => deck.scrollTo({ left: slide * deck.clientWidth, behavior: 'instant' }));
+
+// car selection
+const pick = (e) => {
+  const r = e.target.closest('.row'); if (!r) return;
+  car = FLEET.find((c) => c.id === r.dataset.id); sheetBrand = car.brand; renderCar();
+  if ($('sheet').open) $('sheet').close();
+};
+$('list').onclick = pick; $('sheetList').onclick = pick;
+$('tabs').onclick = (e) => { const t = e.target.closest('.tab'); if (t) { sheetBrand = t.dataset.brand; renderList(); } };
+$('change').onclick = () => { sheetBrand = car.brand; renderList(); $('sheet').showModal(); };
+$('close').onclick = () => $('sheet').close();
+$('sheet').onclick = (e) => { if (e.target === $('sheet')) $('sheet').close(); }; // backdrop tap
+
+// booking
+$('loc').innerHTML = window.LOCATIONS.map((l) => `<option>${l}</option>`).join('');
+$('from').value = iso(1); $('from').min = iso(0); $('to').value = iso(4);
+function quote() {
+  $('to').min = $('from').value;
+  const days = Math.max(0, Math.round((new Date($('to').value) - new Date($('from').value)) / 864e5)) || 0;
+  $('calc').textContent = `${days} ${days === 1 ? 'day' : 'days'} × ${money(car.dailyRate)}`;
+  $('sum').textContent = money(days * car.dailyRate);
+  $('cta').innerHTML = `Book ${car.model} <span aria-hidden="true">→</span>`;
+  $('cta').disabled = days === 0;
+}
+$('from').oninput = quote; $('to').oninput = quote;
+$('bar').onsubmit = (e) => { e.preventDefault(); alert(`Prototype: would book ${car.brand} ${car.model} (${$('sum').textContent})`); };
+
+renderCar(); syncSlide();
+</script>
+</body>
+</html>

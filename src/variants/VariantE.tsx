@@ -1,6 +1,6 @@
 // PROTOTYPE — Variant E "Cinematic": dark game-garage stage, one car at a time.
 import { useState } from 'react'
-import { brands, cars, specs, locations, localDate, rentalDays, quote, type Car } from '../cars'
+import { brands, cars, specs, locations, localDate, paints, rentalDays, quote, type Car } from '../cars'
 import { demo, money } from './demo'
 import { CarViewer } from './CarViewer'
 import './VariantE.css'
@@ -35,6 +35,7 @@ export function VariantE({ onPick }: { onPick: (carId: string) => void }) {
   const [location, setLocation] = useState(locations[0])
   const [pickup, setPickup] = useState(localDate(1))
   const [dropoff, setDropoff] = useState(localDate(4))
+  const [paint, setPaint] = useState<string | null>(null)
 
   const car: Car = cars[idx]
   const s = specs[car.id]
@@ -85,7 +86,7 @@ export function VariantE({ onPick }: { onPick: (carId: string) => void }) {
                         key={m.id}
                         className={`ve-model${m.id === car.id ? ' is-active' : ''}`}
                         aria-current={m.id === car.id}
-                        tabIndex={open ? 0 : -1}
+                        tabIndex={open || matchMedia("(max-width: 720px)").matches ? 0 : -1}
                         onClick={() => go(cars.indexOf(m))}
                       >
                         <img src={`/cars/${m.id}.webp`} alt="" loading="lazy" />
@@ -112,7 +113,7 @@ export function VariantE({ onPick }: { onPick: (carId: string) => void }) {
           </div>
           <div className="ve-floor" aria-hidden="true" />
           <div className="ve-viewer">
-            <CarViewer id={car.id} camera={[4.5, 0.6, 3.5]} autoRotate interactive dark />
+            <CarViewer id={car.id} camera={[4.5, 0.6, 3.5]} autoRotate interactive dark paint={paint ?? undefined} />
           </div>
           <div className="ve-hint">Drag to orbit · scroll to zoom</div>
           <div className="ve-rate">
@@ -140,10 +141,22 @@ export function VariantE({ onPick }: { onPick: (carId: string) => void }) {
             <div><dt>Boot</dt><dd>{s.boot} L</dd></div>
             <div><dt>Seats</dt><dd>{car.seats}</dd></div>
             <div><dt>Fuel</dt><dd>{car.fuel}</dd></div>
+            <div><dt>Mileage</dt><dd>{d.odometer.toLocaleString()} km</dd></div>
+            <div><dt>Allowance</dt><dd>Unlimited km</dd></div>
           </dl>
-          <div className="ve-colors">
-            <span>Paint</span>
-            {d.colors.map((c) => <i key={c} style={{ background: c }} title={c} />)}
+          <div className="ve-colors" role="group" aria-label="Paint">
+            <span>Paint · {paints.find(([, hex]) => hex === paint)?.[0]}</span>
+            {paints.map(([name, hex]) => (
+              <button
+                key={name}
+                className={hex ? '' : 've-factory'}
+                style={hex ? { background: hex } : undefined}
+                title={name}
+                aria-label={name}
+                aria-pressed={hex === paint}
+                onClick={() => setPaint(hex)}
+              />
+            ))}
           </div>
         </aside>
       </main>

@@ -1,0 +1,354 @@
+<!-- PROTOTYPE — throwaway UX exploration for Variant E -->
+<!-- Concept 4 "Sticky story": hero stage stays sticky and shrinks (left half on desktop, 40svh band on mobile) while one-idea sections scroll past. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sticky Story · E</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<script src="./data.js"></script>
+<style>
+:root {
+  --bg: #07080a; --fg: #eef0f2; --dim: #8b9099; --mute: #5d626a;
+  --line: rgba(255,255,255,.09); --acc: #c6ff3d;
+  --p: 0; --hh: 0px; /* scroll progress 0..1, header height (set by JS) */
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'DM Sans', system-ui, sans-serif; overflow-x: hidden; }
+button { cursor: pointer; font: inherit; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* header + selector */
+.top { padding: 18px 32px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.logo { font-family: Anton, sans-serif; font-size: 20px; letter-spacing: .08em; }
+.logo span { color: var(--acc); margin-right: 4px; } .logo em { color: var(--dim); font-style: normal; }
+.count { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.picker { display: flex; align-items: center; gap: 22px; min-width: 0; }
+.scroller { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.scroller::-webkit-scrollbar { display: none; }
+.brand { flex: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 4px 2px; margin-right: 12px; color: var(--mute);
+  font-family: Anton, sans-serif; font-size: 18px; letter-spacing: .04em; text-transform: uppercase; transition: color .2s, border-color .2s; }
+.brand:hover { color: var(--fg); }
+.brand[aria-selected="true"] { color: var(--fg); border-color: var(--acc); }
+.chip { flex: none; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(255,255,255,.02); color: var(--fg); font-size: 13px; font-weight: 600; transition: background .2s, border-color .2s; }
+.chip img { width: 40px; height: 24px; object-fit: contain; }
+.chip small { color: var(--dim); font-weight: 400; }
+.chip:hover { background: rgba(255,255,255,.05); }
+.chip[aria-pressed="true"] { background: rgba(198,255,61,.08); border-color: rgba(198,255,61,.4); }
+
+/* sticky stage */
+.story { position: relative; }
+.pin { position: sticky; top: 0; height: 100svh; z-index: 3; pointer-events: none; }
+.pin .card { pointer-events: auto; }
+.card {
+  position: absolute; top: calc(12px * var(--p)); left: calc(16px * var(--p));
+  width: calc((100% - 32px * var(--p)) * (1 - .5 * var(--p)));
+  height: calc(100svh - 120px - var(--hh) * (1 - var(--p)));
+  border-radius: calc(20px * var(--p)); overflow: hidden; container-type: inline-size;
+  border: 1px solid rgba(255,255,255, calc(.09 * var(--p)));
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 45%, rgba(198,255,61,.07), transparent 70%),
+    radial-gradient(ellipse 75% 65% at 50% 30%, rgba(255,255,255,.06), transparent 70%), var(--bg);
+}
+.meta { position: absolute; top: 22px; inset-inline: 0; text-align: center; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); z-index: 2; }
+.meta b { color: var(--acc); }
+.ghost { position: absolute; top: 44px; inset-inline: 0; text-align: center; white-space: nowrap; pointer-events: none;
+  font-family: Anton, sans-serif; text-transform: uppercase; line-height: .9; font-size: clamp(64px, 17cqw, 240px);
+  color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.14); animation: ghost .8s cubic-bezier(.2,.7,.2,1) both; }
+.floor { position: absolute; left: 10%; right: 10%; bottom: 6%; height: 30%; pointer-events: none;
+  background: radial-gradient(ellipse 50% 40% at 50% 60%, rgba(198,255,61,.14), transparent 70%); }
+model-viewer { position: absolute; inset: 60px 0 10px; width: 100%; height: auto; background: transparent; --poster-color: transparent; --progress-bar-color: var(--acc); }
+.rate { position: absolute; left: 24px; bottom: 18px; z-index: 2; display: flex; align-items: baseline; gap: 6px; color: var(--dim); font-size: 12px; }
+.rate strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 40px; color: var(--fg); }
+.hint { position: absolute; right: 24px; bottom: 24px; z-index: 2; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.paint-tag { position: absolute; right: 24px; top: 20px; z-index: 2; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; }
+.paint-tag i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); }
+
+/* progress nav (fades in once the stage has shrunk) */
+.prog { position: absolute; left: 20px; top: 18px; z-index: 3; display: flex; gap: 14px; opacity: clamp(0, calc(var(--p) * 2 - 1), 1);
+  pointer-events: none; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+.prog.on { pointer-events: auto; }
+.prog a { color: var(--mute); text-decoration: none; padding: 4px 0; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; white-space: nowrap; }
+.prog a.is-active { color: var(--fg); border-color: var(--acc); }
+.card.shrunk .meta { opacity: 0; }
+
+/* scrolling sections */
+.sections { position: relative; z-index: 2; margin-left: 50%; padding: 0 48px 220px 40px; }
+.sec { min-height: 82svh; padding-top: 14svh; }
+.kick { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); }
+.kick b { color: var(--acc); font-weight: 700; margin-right: 8px; }
+.sec h2 { font-family: Anton, sans-serif; font-weight: 400; text-transform: uppercase; font-size: clamp(40px, 5vw, 72px); line-height: .95; margin: 10px 0 12px; letter-spacing: .01em; }
+.lede { color: var(--dim); max-width: 42ch; margin: 0 0 32px; line-height: 1.5; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 14px; }
+.sw { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; color: var(--dim); font-size: 12px; width: 64px; }
+.sw i { width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); transition: transform .2s, box-shadow .2s; }
+.sw.factory i { background: conic-gradient(from 45deg, #e9e9e6, #8a8d91, #1d1f22, #e9e9e6); }
+.sw:hover i { transform: scale(1.06); }
+.sw[aria-pressed="true"] { color: var(--fg); }
+.sw[aria-pressed="true"] i { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--acc); }
+
+.gallery { display: grid; gap: 14px; }
+.photo { position: relative; margin: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--line);
+  background: radial-gradient(ellipse at 50% 70%, rgba(255,255,255,.07), transparent 70%), #0d0f12; aspect-ratio: 16 / 8; }
+.photo img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 8px 16px; }
+.photo figcaption { position: absolute; left: 14px; bottom: 12px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--fg); }
+.photo .soon { position: absolute; right: 12px; top: 12px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim);
+  padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; display: none; }
+.photo.fallback .soon { display: block; }
+.photo.fallback img { opacity: .55; filter: grayscale(.4); }
+
+.perf { display: flex; flex-direction: column; gap: 30px; }
+.big { display: flex; align-items: baseline; gap: 10px; }
+.big strong { font-family: Anton, sans-serif; font-weight: 400; font-size: clamp(56px, 7vw, 96px); line-height: 1; }
+.big span { color: var(--dim); font-size: 14px; }
+.big em { margin-left: auto; font-style: normal; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.bar { height: 2px; background: rgba(255,255,255,.08); margin-top: 10px; border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--acc); box-shadow: 0 0 8px rgba(198,255,61,.6); transform-origin: left; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+
+.odo { display: flex; align-items: baseline; gap: 10px; margin-bottom: 28px; }
+.odo strong { font-family: Anton, sans-serif; font-weight: 400; font-size: clamp(56px, 7vw, 96px); line-height: 1; font-variant-numeric: tabular-nums; }
+.odo span { color: var(--dim); }
+.facts { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 20px; }
+.facts div { padding: 12px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.facts dt { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.facts dd { margin: 3px 0 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.facts .low dd { color: #ffb23d; }
+
+/* booking bar (from Variant E) */
+.bk { position: fixed; z-index: 20; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(1120px, calc(100% - 32px));
+  display: grid; grid-template-columns: 1.3fr 1fr 1fr auto auto; align-items: center; gap: 4px; padding: 8px; border-radius: 18px;
+  background: rgba(20,22,26,.72); border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.fld { display: flex; flex-direction: column; gap: 2px; padding: 6px 12px; border-radius: 12px; min-width: 0; }
+.fld:hover { background: rgba(255,255,255,.04); }
+.fld span { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.fld select, .fld input { background: none; border: 0; color: var(--fg); font: 600 14px 'DM Sans', sans-serif; padding: 0; min-width: 0; width: 100%; color-scheme: dark; }
+.fld option { background: #15171b; }
+.tot { display: flex; flex-direction: column; align-items: flex-end; padding: 0 14px; white-space: nowrap; }
+.tot span { font-size: 11px; color: var(--dim); }
+.tot strong { font-family: Anton, sans-serif; font-weight: 400; font-size: 26px; line-height: 1.1; }
+.cta { height: 54px; padding: 0 24px; border: 0; border-radius: 12px; white-space: nowrap; background: var(--acc); color: #0a0b0c; font-weight: 700; font-size: 15px;
+  box-shadow: 0 0 24px rgba(198,255,61,.35); transition: transform .15s, box-shadow .2s; }
+.cta:hover { box-shadow: 0 0 36px rgba(198,255,61,.55); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+@keyframes ghost { from { opacity: 0; transform: translateX(60px); letter-spacing: .1em; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* mobile: selector rows scroll sideways, stage collapses to a 40svh band */
+@media (max-width: 760px) {
+  .top { padding: 12px 16px 10px; gap: 8px; }
+  .picker { flex-direction: column; align-items: stretch; gap: 8px; }
+  .scroller { margin-inline: -16px; padding-inline: 16px; }
+  .brand { font-size: 16px; margin-right: 8px; }
+  .pin { height: 40svh; }
+  .card { top: 0; left: 0; width: 100%; border-radius: 0; border: 0; border-bottom: 1px solid var(--line);
+    height: calc(40svh + 24svh * (1 - var(--p))); }
+  .spacer { height: 24svh; }
+  .ghost { font-size: 22cqw; top: 40px; }
+  model-viewer { inset: 44px 0 0; }
+  .rate { left: 16px; bottom: 10px; } .rate strong { font-size: 28px; }
+  .hint { display: none; }
+  .paint-tag { right: 16px; top: auto; bottom: 16px; }
+  .prog { left: 0; right: 0; top: 12px; justify-content: center; gap: 12px; font-size: 10px; background: none; }
+  .sections { margin-left: 0; padding: 0 16px 240px; }
+  .sec { min-height: 0; padding-top: 56px; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec { scroll-margin-top: 40svh; }
+  .bk { grid-template-columns: 1.15fr 1fr 1fr; gap: 2px 0; bottom: 10px; width: calc(100% - 20px); padding: 6px; border-radius: 16px; }
+  .fld { padding: 4px 6px; }
+  .fld span { font-size: 9px; letter-spacing: .14em; }
+  .fld select, .fld input { font-size: 12px; }
+  .fld input::-webkit-calendar-picker-indicator { display: none; }
+  .tot { grid-column: 1; align-items: flex-start; padding: 0 6px; }
+  .tot strong { font-size: 22px; }
+  .cta { grid-column: 2 / -1; }
+  .cta { height: 46px; padding: 0 14px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (min-width: 761px) { .spacer { display: none; } }
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="top-row">
+    <div class="logo"><span>◆</span> GARAGE<em>/</em>RENT</div>
+    <div class="count" id="count"></div>
+  </div>
+  <nav class="picker" aria-label="Choose a car">
+    <div class="scroller" role="tablist" id="brands"></div>
+    <div class="scroller" id="models"></div>
+  </nav>
+</header>
+
+<div class="story">
+  <div class="pin">
+    <section class="card" id="card" aria-label="3D view">
+      <nav class="prog" id="prog" aria-label="Sections">
+        <a href="#paint">Paint</a><a href="#gallery">Gallery</a><a href="#performance">Performance</a><a href="#this-car">This car</a>
+      </nav>
+      <div class="meta" id="meta"></div>
+      <div class="ghost" id="ghost" aria-hidden="true"></div>
+      <div class="floor" aria-hidden="true"></div>
+      <!-- radius set per stage aspect by frame(); zoom band 85–120% of that fit. Polar capped at 88deg: never below the floor. -->
+      <model-viewer id="mv" alt="3D car model" camera-controls auto-rotate auto-rotate-delay="1500" rotation-per-second="12deg"
+        shadow-intensity="1" environment-image="neutral" interaction-prompt="none" disable-pan
+        camera-orbit="50deg 80deg 72%" min-camera-orbit="auto 55deg 61%" max-camera-orbit="auto 88deg 86%"
+        field-of-view="30deg" min-field-of-view="30deg" max-field-of-view="30deg"></model-viewer>
+      <div class="paint-tag" id="paintTag"></div>
+      <div class="rate"><span>From</span><strong id="rate"></strong><span>/ day</span></div>
+      <div class="hint">Drag to orbit</div>
+    </section>
+  </div>
+  <div class="spacer"></div>
+
+  <main class="sections">
+    <section class="sec" id="paint">
+      <div class="kick"><b>01</b>Paint</div>
+      <h2>Pick its colour</h2>
+      <p class="lede">Previewed live on the model. The car you collect is the factory finish shown in the photos.</p>
+      <div class="swatches" id="swatches"></div>
+    </section>
+    <section class="sec" id="gallery">
+      <div class="kick"><b>02</b>Gallery</div>
+      <h2>The real car</h2>
+      <p class="lede">Photos of this exact vehicle, front, side and rear.</p>
+      <div class="gallery" id="photos"></div>
+    </section>
+    <section class="sec" id="performance">
+      <div class="kick"><b>03</b>Performance</div>
+      <h2>How it drives</h2>
+      <p class="lede">Bars compare against the best in our fleet.</p>
+      <div class="perf" id="perf"></div>
+    </section>
+    <section class="sec" id="this-car">
+      <div class="kick"><b>04</b>This car</div>
+      <h2>Its history</h2>
+      <div class="odo"><strong id="odo"></strong><span>km on the clock</span></div>
+      <dl class="facts" id="facts"></dl>
+    </section>
+  </main>
+</div>
+
+<form class="bk" id="bk">
+  <label class="fld"><span>Pick-up</span><select id="loc"></select></label>
+  <label class="fld"><span>From</span><input type="date" id="from"></label>
+  <label class="fld"><span>Return</span><input type="date" id="to"></label>
+  <div class="tot"><span id="calc"></span><strong id="total"></strong></div>
+  <button class="cta" id="cta" type="submit"></button>
+</form>
+
+<script>
+const F = window.FLEET, P = window.PAINTS, $ = (id) => document.getElementById(id);
+const money = (n) => '$' + n.toLocaleString('en-US');
+const brands = [...new Set(F.map((c) => c.brand))];
+const maxHp = Math.max(...F.map((c) => c.specs.hp)), maxTop = Math.max(...F.map((c) => c.specs.topSpeed)), minAcc = Math.min(...F.map((c) => c.specs.accel));
+const iso = (d) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toLocaleDateString('en-CA'); };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let car = F[0], brand = car.brand, paint = P[0];
+const mv = $('mv');
+
+$('count').textContent = `${F.length} cars · ${brands.length} marques`;
+$('loc').innerHTML = window.LOCATIONS.map((l) => `<option>${esc(l)}</option>`).join('');
+$('from').value = iso(1); $('from').min = iso(0); $('to').value = iso(4);
+
+function renderPicker() {
+  $('brands').innerHTML = brands.map((b) => `<button class="brand" role="tab" aria-selected="${b === brand}" data-b="${esc(b)}">${esc(b)}</button>`).join('');
+  $('models').innerHTML = F.filter((c) => c.brand === brand).map((c) =>
+    `<button class="chip" aria-pressed="${c.id === car.id}" data-id="${c.id}"><img src="${c.photos.front}" alt="">${esc(c.model)} <small>${money(c.dailyRate)}</small></button>`).join('');
+}
+$('brands').onclick = (e) => { const b = e.target.closest('[data-b]'); if (!b) return; brand = b.dataset.b; pick(F.find((c) => c.brand === brand)); };
+$('models').onclick = (e) => { const b = e.target.closest('[data-id]'); if (b) pick(F.find((c) => c.id === b.dataset.id)); };
+
+function pick(c) {
+  car = c; brand = c.brand;
+  renderPicker();
+  mv.src = c.glb;
+  $('meta').innerHTML = `<b>${esc(c.brand)}</b> · ${c.year} · ${esc(c.category)} · ${esc(c.fuel)}`;
+  const g = $('ghost'); g.textContent = c.model; g.style.animation = 'none'; g.offsetWidth; g.style.animation = '';
+  $('rate').textContent = money(c.dailyRate);
+  $('photos').innerHTML = ['front', 'side', 'rear'].map((k) =>
+    `<figure class="photo"><img src="${c.photos[k]}" alt="${esc(c.model)} ${k}" data-front="${c.photos.front}"><figcaption>${k}</figcaption><span class="soon">Photo coming</span></figure>`).join('');
+  $('photos').querySelectorAll('img').forEach((img) => img.onerror = () => { img.onerror = null; img.src = img.dataset.front; img.parentElement.classList.add('fallback'); });
+  const s = c.specs, bar = (r) => `<div class="bar"><i style="transform:scaleX(${r.toFixed(3)})"></i></div>`;
+  $('perf').innerHTML =
+    `<div><div class="big"><strong>${s.hp}</strong><span>hp</span><em>Power</em></div>${bar(s.hp / maxHp)}</div>` +
+    `<div><div class="big"><strong>${s.accel.toFixed(1)}</strong><span>s</span><em>0–100 km/h</em></div>${bar(minAcc / s.accel)}</div>` +
+    `<div><div class="big"><strong>${s.topSpeed}</strong><span>km/h</span><em>Top speed</em></div>${bar(s.topSpeed / maxTop)}</div>`;
+  $('odo').textContent = c.odometer.toLocaleString('en-US');
+  const facts = [['Rating', '★ ' + c.rating.toFixed(1)], ['Trips', c.trips], ['Available', c.available, c.available <= 2],
+    ['Drive', s.drive], ['Gearbox', s.gearbox], ['Efficiency', s.efficiency], ['Boot', s.boot + ' L'], ['Seats', c.seats], ['Fuel', c.fuel]];
+  $('facts').innerHTML = facts.map(([k, v, low]) => `<div class="${low ? 'low' : ''}"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+  quote();
+}
+
+// Paint: tint body-ish materials; skip glass/tyres/lights so the car still reads as a car.
+const SKIP = /glass|window|tire|tyre|rubber|light|lamp|chrome|wheel|rim|interior|black/i;
+function applyPaint() {
+  if (!mv.model) return;
+  const [, hex] = paint;
+  const rgb = hex ? [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).concat(1) : [1, 1, 1, 1];
+  for (const m of mv.model.materials) if (!hex || !SKIP.test(m.name)) m.pbrMetallicRoughness.setBaseColorFactor(rgb);
+}
+mv.addEventListener('load', applyPaint);
+function renderSwatches() {
+  $('swatches').innerHTML = P.map(([n, h], i) =>
+    `<button class="sw${h ? '' : ' factory'}" aria-pressed="${paint[0] === n}" data-i="${i}"><i style="${h ? 'background:' + h : ''}"></i>${n}</button>`).join('');
+  $('paintTag').innerHTML = paint[1] ? `<i style="background:${paint[1]}"></i>${paint[0]}` : '';
+}
+$('swatches').onclick = (e) => { const b = e.target.closest('[data-i]'); if (!b) return; paint = P[+b.dataset.i]; renderSwatches(); applyPaint(); };
+
+function quote() {
+  const days = Math.max(0, Math.round((new Date($('to').value) - new Date($('from').value)) / 864e5));
+  $('to').min = $('from').value;
+  $('calc').textContent = `${days} ${days === 1 ? 'day' : 'days'} × ${money(car.dailyRate)}`;
+  $('total').textContent = money(days * car.dailyRate);
+  $('cta').innerHTML = `Book ${esc(car.model)} <span aria-hidden="true">→</span>`;
+  $('cta').disabled = days === 0;
+}
+$('from').onchange = $('to').onchange = quote;
+$('bk').onsubmit = (e) => { e.preventDefault(); alert(`Prototype: would book ${car.model} for ${$('total').textContent}`); };
+
+// Scroll progress → --p drives the stage shrink (pure CSS calc).
+const root = document.documentElement, card = $('card'), prog = $('prog');
+function onScroll() {
+  const hh = $('top').offsetHeight, mobile = innerWidth <= 760;
+  const range = innerHeight * (mobile ? .24 : .5);
+  const p = Math.min(1, Math.max(0, (scrollY - hh) / range));
+  root.style.setProperty('--p', p.toFixed(4));
+  root.style.setProperty('--hh', hh + 'px');
+  card.classList.toggle('shrunk', p > .5); prog.classList.toggle('on', p > .5);
+  frame();
+}
+// Framing: FOV is locked, so radius alone sets the fit. Narrow/tall stage → back off so the car never clips.
+// Zoom band = 85%–120% of that fit. ponytail: 66/95 tuned by eye on these GLBs; recalibrate if models change scale.
+let fit = 0;
+function frame() {
+  const r = Math.round(innerWidth <= 760 ? Math.max(78, 64 / (card.clientWidth / card.clientHeight)) : Math.max(66, 95 / (card.clientWidth / card.clientHeight)));
+  if (Math.abs(r - fit) < 3) return;
+  fit = r;
+  const o = mv.getCameraOrbit ? mv.getCameraOrbit() : null;
+  mv.minCameraOrbit = `auto 55deg ${Math.round(r * .85)}%`;
+  mv.maxCameraOrbit = `auto 88deg ${Math.round(r * 1.2)}%`;
+  mv.cameraOrbit = o && mv.loaded ? `${o.theta}rad ${o.phi}rad ${r}%` : `50deg 80deg ${r}%`;
+}
+addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll);
+
+const links = [...prog.querySelectorAll('a')];
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) links.forEach((a) => a.classList.toggle('is-active', a.hash === '#' + e.target.id));
+}), { rootMargin: '-45% 0px -50% 0px' });
+document.querySelectorAll('.sec').forEach((s) => io.observe(s));
+links.forEach((a) => a.onclick = (e) => { e.preventDefault(); document.querySelector(a.hash).scrollIntoView({ behavior: 'smooth' }); });
+
+renderSwatches(); pick(car); onScroll();
+</script>
+</body>
+</html>

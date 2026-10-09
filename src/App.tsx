@@ -1,8 +1,8 @@
 import { Suspense, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Bounds, Center, Clone, ContactShadows, Environment, Lightformer, MeshReflectorMaterial, OrbitControls, useGLTF, useProgress } from '@react-three/drei'
-import { PrototypeSwitcher, useVariant } from './prototype/PrototypeSwitcher'
-import { variants } from './prototype/variants'
+import { PrototypeSwitcher, useVariant } from './variants/PrototypeSwitcher'
+import { variants } from './variants/variants'
 import { cars, credit, extras, localDate, locations, money, quote, rentalDays, type Car } from './cars'
 
 type Step = 'fleet' | 'details' | 'checkout'
