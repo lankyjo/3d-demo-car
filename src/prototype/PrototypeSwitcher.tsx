@@ -41,7 +41,7 @@ function onKey(e: KeyboardEvent) {
 function subscribe(cb: () => void) {
   addEventListener('variantchange', cb)
   addEventListener('popstate', cb)
-  if (import.meta.env.DEV) addEventListener('keydown', onKey)
+  addEventListener('keydown', onKey)
   return () => {
     removeEventListener('variantchange', cb)
     removeEventListener('popstate', cb)
@@ -52,7 +52,6 @@ function subscribe(cb: () => void) {
 export const useVariant = () => useSyncExternalStore(subscribe, read)
 
 export function PrototypeSwitcher({ current }: { current: VariantKey }) {
-  if (!import.meta.env.DEV) return null
   return (
     <div style={{ position: 'fixed', zIndex: 9999, bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, padding: 4, borderRadius: 999, background: '#ff2d6f', color: '#fff', font: '600 13px/1 system-ui, sans-serif', boxShadow: '0 10px 30px rgba(0,0,0,.35)' }}>
       <button onClick={() => step(-1)} aria-label="Previous variant" style={btn}>←</button>
