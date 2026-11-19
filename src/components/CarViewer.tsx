@@ -120,8 +120,11 @@ function Platform() {
   )
 }
 
-// Soft dark blob the size of the car's footprint. (drei's ContactShadows rendered nothing in this scene.)
+// Soft dark blob stretched to the car's footprint. (drei's ContactShadows rendered nothing in this scene.)
+// Built once on first use and shared by every car, so switching cars doesn't leak textures.
+let shadowTexture: THREE.CanvasTexture | undefined
 function blobShadow() {
+  if (shadowTexture) return shadowTexture
   const c = document.createElement('canvas')
   c.width = c.height = 128
   const ctx = c.getContext('2d')!
@@ -131,7 +134,7 @@ function blobShadow() {
   g.addColorStop(1, 'rgba(0,2,8,0)')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, 128, 128)
-  return new THREE.CanvasTexture(c)
+  return (shadowTexture = new THREE.CanvasTexture(c))
 }
 
 function Scene({ id }: { id: string }) {
@@ -144,7 +147,6 @@ function Scene({ id }: { id: string }) {
     model.scale.setScalar(k)
     return { model, footprint: [size.x * k * 0.62, size.z * k * 0.62, 1] as const }
   }, [scene])
-  const shadow = useMemo(() => blobShadow(), [])
   // The car turns on the disc; the camera and the ring's cyan-left / violet-right gradient stay put.
   const turntable = useRef<THREE.Group>(null)
   useFrame((_, dt) => {
@@ -159,7 +161,7 @@ function Scene({ id }: { id: string }) {
         </Center>
         <mesh {...flat} position-y={0.012} scale={footprint}>
           <circleGeometry args={[1, 48]} />
-          <meshBasicMaterial map={shadow} transparent depthWrite={false} toneMapped={false} />
+          <meshBasicMaterial map={blobShadow()} transparent depthWrite={false} toneMapped={false} />
         </mesh>
       </group>
       <Platform />
