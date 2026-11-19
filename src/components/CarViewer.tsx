@@ -9,6 +9,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 const CYAN = new THREE.Color('#27e1ff')
 const VIOLET = new THREE.Color('#9a5bff')
 const CAR_LENGTH = 4
+const R = CAR_LENGTH * 0.62 // turntable radius
 
 // How far the user may zoom relative to the auto-framed fit, so the car never fills or vanishes from the stage.
 const ZOOM_IN = 0.8
@@ -39,13 +40,14 @@ function neonRing(radius: number, tube: number) {
   return g
 }
 
-function Platform({ radius }: { radius: number }) {
-  const ring = useMemo(() => neonRing(radius, radius * 0.012), [radius])
-  const halo = useMemo(() => neonRing(radius, radius * 0.06), [radius])
+const ring = neonRing(R, R * 0.012)
+const halo = neonRing(R, R * 0.06)
+
+function Platform() {
   return (
     <group>
-      <mesh position-y={-radius * 0.04}>
-        <cylinderGeometry args={[radius * 1.02, radius * 1.06, radius * 0.08, 128]} />
+      <mesh position-y={-R * 0.04}>
+        <cylinderGeometry args={[R * 1.02, R * 1.06, R * 0.08, 128]} />
         <meshStandardMaterial color="#070b16" metalness={0.85} roughness={0.28} />
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position-y={0.002} geometry={ring}>
@@ -55,7 +57,7 @@ function Platform({ radius }: { radius: number }) {
         <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.16} depthWrite={false} />
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position-y={0.003}>
-        <ringGeometry args={[radius * 0.72, radius * 0.725, 128]} />
+        <ringGeometry args={[R * 0.72, R * 0.725, 128]} />
         <meshBasicMaterial color="#3a7bff" transparent opacity={0.35} toneMapped={false} />
       </mesh>
     </group>
@@ -71,7 +73,6 @@ function Scene({ id }: { id: string }) {
     model.scale.setScalar(CAR_LENGTH / Math.max(size.x, size.z))
     return model
   }, [scene])
-  const radius = CAR_LENGTH * 0.62
   // Shadows sit outside Bounds so their large plane doesn't shrink the auto-fit.
   return (
     <>
@@ -80,9 +81,9 @@ function Scene({ id }: { id: string }) {
         <Center top>
           <primitive object={model} />
         </Center>
-        <Platform radius={radius} />
+        <Platform />
       </Bounds>
-      <ContactShadows position-y={0.004} opacity={0.85} scale={radius * 2.2} blur={2.2} far={radius} />
+      <ContactShadows position-y={0.004} opacity={0.85} scale={R * 2.2} blur={2.2} far={R} />
     </>
   )
 }
