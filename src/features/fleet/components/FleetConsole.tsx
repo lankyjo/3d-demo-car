@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { telemetry } from '@/lib/telemetry'
 import { useAppSelector } from '@/store/hooks'
 import { selectCar } from '../slice/fleetSelectors'
@@ -42,7 +43,7 @@ export function FleetConsole() {
       </div>
       <Stagger i={6}><div id="fleet" className="scroll-mt-6"><FleetStrip /></div></Stagger>
       <Stagger i={7} className="hidden self-end lg:block">
-        <a href="/credits" className="hud text-[9px] text-mute/50 transition hover:text-cyan">Photo credits</a>
+        <Link href="/credits" className="hud text-[9px] text-mute/50 transition hover:text-cyan">Photo credits</Link>
       </Stagger>
     </main>
   )
