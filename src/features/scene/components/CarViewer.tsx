@@ -1,40 +1,57 @@
 'use client'
-// 3D car on a neon turntable. Fills its parent (parent needs a size + position: relative). Client-only: load via next/dynamic.
+// 3D car on a neon turntable, drawn full-screen behind the pages by SceneBackdrop. Client-only: load via next/dynamic.
 import { Suspense, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Center, Environment, Grid, Lightformer, MeshReflectorMaterial, OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import type { View } from '../slice/sceneSelectors'
 
 const CYAN = new THREE.Color('#27e1ff')
 const VIOLET = new THREE.Color('#9a5bff')
 const CAR_LENGTH = 4
 const R = CAR_LENGTH * 0.62 // turntable radius
 
-const FOV = 26
-const TARGET = new THREE.Vector3(0, 0.45, 0) // just under the car's waistline, so the disc sits low in the frame
-// The canvas extends this many px below the stage (see Stage.tsx, `-bottom-28`) so the scene fades out behind the
-// button instead of being cut off; the view is shifted up by half of it to keep the car centred in the stage.
-const BLEED = 112
-const START = -0.4 // opening pose: side-on three-quarter, nose to the left
+const FOV = 38
+const TARGET = new THREE.Vector3(0, 0.45, 0) // just under the car's waistline
+const START = -0.4 // resting pose: side-on three-quarter, nose to the left
+const { damp, degToRad } = THREE.MathUtils
 
-// Every car is scaled to CAR_LENGTH, so the camera distance only depends on the canvas shape: far enough that the
-// platform spans the stage width, and never so close that the roof is cut off. Zoom is limited around that distance.
-function Framing() {
-  const framed = useRef('')
-  useFrame((state) => {
+// Where the scene sits on the full-screen canvas for each page, on desktop and on phones (< 1024px wide):
+//   side  px taken by the page's side cards, so the scene is fitted to what is left between them
+//   cy    vertical centre of the scene as a fraction of the viewport height
+//   fit   world radius that must fit that width: larger shows the whole base, smaller zooms in on the car
+// These mirror the page layouts (FleetConsole, Checkout); retune here if the card widths change.
+const VIEWS: Record<View, Record<'desktop' | 'phone', { side: number; cy: number; fit: number }>> = {
+  fleet: { desktop: { side: 660, cy: 0.42, fit: R * 1.2 }, phone: { side: 0, cy: 0.3, fit: R * 1.12 } },
+  checkout: { desktop: { side: 790, cy: 0.47, fit: R * 1.0 }, phone: { side: 0, cy: 0.45, fit: R * 0.98 } },
+}
+
+// Eases the camera distance and vertical placement toward the current page's framing. Once it has settled it lets
+// go, so the user's own zoom sticks until the page or the window size changes.
+function Framing({ view }: { view: View }) {
+  const at = useRef({ distance: 0, shift: 0, key: '' })
+  useFrame((state, dt) => {
     const controls = state.controls as OrbitControlsImpl | null
+    if (!controls) return
     const { width, height } = state.size
+    const v = VIEWS[view][width < 1024 ? 'phone' : 'desktop']
+    const tan = Math.tan(degToRad(FOV / 2))
+    const distance = Math.max((v.fit * height) / (tan * Math.max(width - v.side, 280)), 2 / tan)
+    const shift = (0.5 - v.cy) * height
+    const now = at.current
     const key = `${width}x${height}`
-    if (!controls || key === framed.current) return
-    framed.current = key
+    if (!now.key) Object.assign(now, { distance, shift }) // first frame: no animation
+    const settled = Math.abs(now.distance - distance) < 0.01 && Math.abs(now.shift - shift) < 0.5
+    if (settled && now.key === key) return
+    now.distance = settled ? distance : damp(now.distance, distance, 2.4, dt)
+    now.shift = settled ? shift : damp(now.shift, shift, 2.4, dt)
+    now.key = key
     const camera = state.camera as THREE.PerspectiveCamera
-    const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
-    const distance = Math.max((R * 1.47) / (tan * (width / (height - BLEED))), 1.55 / tan)
-    camera.position.sub(TARGET).setLength(distance).add(TARGET)
-    camera.setViewOffset(width, height, 0, BLEED / 2, width, height)
-    controls.minDistance = distance * 0.9
-    controls.maxDistance = distance * 1.25
+    camera.position.sub(TARGET).setLength(now.distance).add(TARGET)
+    camera.setViewOffset(width, height, 0, now.shift, width, height)
+    controls.minDistance = now.distance * 0.85
+    controls.maxDistance = now.distance * 1.25
     controls.update()
   })
   return null
@@ -137,7 +154,9 @@ function blobShadow() {
   return (shadowTexture = new THREE.CanvasTexture(c))
 }
 
-function Scene({ id }: { id: string }) {
+// The car on its turntable. Suspends while the GLB downloads; the platform and grid are drawn outside it, so the
+// room is there from the first frame.
+function Car({ id, view }: { id: string; view: View }) {
   const { scene } = useGLTF(`/models/${id}.glb`)
   // Every GLB is scaled to the same length so one camera framing fits them all.
   const { model, footprint } = useMemo(() => {
@@ -148,48 +167,62 @@ function Scene({ id }: { id: string }) {
     return { model, footprint: [size.x * k * 0.62, size.z * k * 0.62, 1] as const }
   }, [scene])
   // The car turns on the disc; the camera and the ring's cyan-left / violet-right gradient stay put.
+  // Fleet: slow endless spin. Checkout: one unhurried spin on to the resting pose, then it stays still.
   const turntable = useRef<THREE.Group>(null)
+  const rest = useRef<number | null>(null)
   useFrame((_, dt) => {
-    if (turntable.current) turntable.current.rotation.y += dt * 0.08
+    const car = turntable.current
+    if (!car) return
+    if (view === 'fleet') {
+      rest.current = null
+      car.rotation.y += dt * 0.08
+      return
+    }
+    // The next resting pose at least three-quarters of a turn ahead.
+    rest.current ??= START + Math.ceil((car.rotation.y + Math.PI * 1.5 - START) / (Math.PI * 2)) * Math.PI * 2
+    car.rotation.y = damp(car.rotation.y, rest.current, 1.5, dt)
   })
   return (
-    <>
-      <Framing />
-      <group ref={turntable} rotation-y={START}>
-        <Center top>
-          <primitive object={model} />
-        </Center>
-        <mesh {...flat} position-y={0.012} scale={footprint}>
-          <circleGeometry args={[1, 48]} />
-          <meshBasicMaterial map={blobShadow()} transparent depthWrite={false} toneMapped={false} />
-        </mesh>
-      </group>
-      <Platform />
-      {/* Ground grid under the turntable; fades out with distance so it never meets the canvas edge. */}
-      <Grid
-        position-y={-R * 0.112}
-        infiniteGrid
-        cellSize={0.6}
-        sectionSize={2.4}
-        cellThickness={0.7}
-        sectionThickness={1.1}
-        cellColor="#1d4f9c"
-        sectionColor="#2f7dff"
-        fadeDistance={26}
-        fadeStrength={2.2}
-      />
-    </>
+    <group ref={turntable} rotation-y={START}>
+      <Center top>
+        <primitive object={model} />
+      </Center>
+      <mesh {...flat} position-y={0.012} scale={footprint}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial map={blobShadow()} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </group>
   )
 }
 
-export function CarViewer({ id }: { id: string }) {
+export function CarViewer({ id, view }: { id: string; view: View }) {
   return (
     <Canvas style={{ position: 'absolute', inset: 0 }} camera={{ position: [5, 1.45, 4.3], fov: FOV }} dpr={[1, 2]} gl={{ alpha: true }}>
       <ambientLight intensity={1.3} />
       <directionalLight position={[5, 6, 4]} intensity={2.2} />
       <directionalLight position={[-4, 3, -3]} intensity={1.4} color="#9fd4ff" />
+      <Framing view={view} />
+      <Platform />
+      {/* Wide soft shadow on the floor so the base reads as standing on the grid, not hovering over it. */}
+      <mesh {...flat} position-y={-R * 0.111} scale={[R * 1.75, R * 1.75, 1]}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial map={blobShadow()} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+      {/* Ground grid under the turntable; fades out with distance so it never meets the canvas edge. */}
+      <Grid
+        position-y={-R * 0.11}
+        infiniteGrid
+        cellSize={0.6}
+        sectionSize={2.4}
+        cellThickness={0.7}
+        sectionThickness={1.1}
+        cellColor="#2460b8"
+        sectionColor="#3d8bff"
+        fadeDistance={42}
+        fadeStrength={2.2}
+      />
       <Suspense fallback={null}>
-        <Scene key={id} id={id} />
+        <Car key={id} id={id} view={view} />
       </Suspense>
       <Environment resolution={256} environmentIntensity={0.8}>
         <Lightformer intensity={2} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />

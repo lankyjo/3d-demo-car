@@ -28,9 +28,28 @@
   --bevel: 9px;
 
   --animate-blink: blink 2s ease-in-out infinite;
+  --animate-edge-spin: edge-spin 2.4s linear infinite;
   @keyframes blink {
     50% { opacity: 0.35; }
   }
+  @keyframes edge-spin {
+    to { --edge-angle: 630deg; }
+  }
+}
+
+/* Angle of the call-to-action border gradient; animatable so the border can rotate on hover. */
+@property --edge-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 270deg;
+}
+
+/* CTA border: cyan on the left through azure to violet on the right (conic, so it can spin). */
+@utility cta-edge {
+  background: conic-gradient(
+    from var(--edge-angle),
+    var(--color-cyan), var(--color-azure), var(--color-violet), var(--color-azure), var(--color-cyan)
+  );
 }
 
 /* Notched-corner card shape used by every panel and button. */
@@ -73,14 +92,34 @@
     var(--color-void);
 }
 
-@utility scene-grid {
-  background-image:
-    linear-gradient(to right, rgb(80 160 255 / 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(80 160 255 / 0.07) 1px, transparent 1px);
-  background-size: 64px 64px;
-  transform: perspective(600px) rotateX(62deg);
-  transform-origin: top;
-  mask-image: linear-gradient(to bottom, black, transparent 80%);
+/* The pages float over the full-screen 3D scene. Empty space lets drags through to the car; only real
+   interface (cards, links, controls) catches the pointer. */
+@utility hud-layer {
+  pointer-events: none;
+  & :where(a, button, input, select, label, section, header) {
+    pointer-events: auto;
+  }
+}
+
+/* Page choreography (see Stagger.tsx): each piece slides in from --dx/--dy on mount, one after another by --i,
+   and slides back out when its page is flagged [data-leaving]. */
+@keyframes stagger-in {
+  from { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)); filter: blur(6px); }
+}
+@keyframes stagger-out {
+  to { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)); filter: blur(6px); }
+}
+@utility stagger {
+  animation: stagger-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 80ms + 150ms);
+  [data-leaving] & {
+    animation: stagger-out 0.45s cubic-bezier(0.55, 0, 0.9, 0.3) forwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 1ms;
+    animation-delay: 0s;
+  }
 }
 
 @layer base {

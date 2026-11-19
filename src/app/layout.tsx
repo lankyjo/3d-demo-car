@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Michroma, Oxanium } from 'next/font/google'
+import { preload } from 'react-dom'
+import { SceneBackdrop } from '@/features/scene/components/SceneBackdrop'
+import { fleetSlice } from '@/features/fleet/slice/fleetSlice'
 import { StoreProvider } from '@/store/StoreProvider'
 import './globals.css'
 
@@ -14,11 +17,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#01030a' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Start downloading the opening car's model with the page, instead of after the 3D code has loaded.
+  preload(`/models/${fleetSlice.getInitialState().selectedId}.glb`, { as: 'fetch', crossOrigin: 'anonymous' })
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>
-        <div aria-hidden className="scene-grid pointer-events-none fixed inset-x-0 top-[55%] -z-10 h-[90vh]" />
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <SceneBackdrop />
+          <div className="hud-layer relative z-10">{children}</div>
+        </StoreProvider>
       </body>
     </html>
   )

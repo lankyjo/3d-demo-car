@@ -36,11 +36,11 @@ export const Row = ({ label, children }: { label: React.ReactNode; children: Rea
   </div>
 )
 
-// Big glowing call to action; wrap it in a <Link> or <button> with className="group block".
+// Big glowing call to action; wrap it in a <Link> or <button> with className="group block". On hover its border rotates.
 export const Cta = ({ children }: { children: React.ReactNode }) => (
-  <span className="block drop-shadow-[0_0_22px_rgb(58_123_255/0.7)] transition group-hover:drop-shadow-[0_0_30px_rgb(39_225_255/0.8)] group-disabled:opacity-40">
-    <span className="bevel block bg-linear-to-r from-cyan via-azure to-violet p-[3px]">
-      <span className="bevel flex items-center justify-center gap-5 bg-abyss bg-linear-to-r from-azure/25 via-transparent to-violet/20 px-6 py-4 font-display text-sm tracking-[0.24em] lg:px-8 lg:py-5 lg:text-base lg:tracking-[0.28em] whitespace-nowrap text-ink uppercase [-webkit-text-stroke:0.5px_currentColor] [text-shadow:0_0_12px_rgb(230_238_255/0.5)] transition group-hover:from-azure/40">
+  <span className="block drop-shadow-[0_0_22px_rgb(58_123_255/0.7)] group-disabled:opacity-40">
+    <span className="bevel cta-edge block p-[3px] motion-safe:group-hover:animate-edge-spin motion-safe:group-focus-visible:animate-edge-spin">
+      <span className="bevel flex items-center justify-center gap-5 bg-abyss bg-linear-to-r from-azure/25 via-transparent to-violet/20 px-6 py-4 font-display text-sm tracking-[0.24em] lg:px-8 lg:py-5 lg:text-base lg:tracking-[0.28em] whitespace-nowrap text-ink uppercase [-webkit-text-stroke:0.5px_currentColor] [text-shadow:0_0_12px_rgb(230_238_255/0.5)]">
         {children}
         <svg aria-hidden viewBox="0 0 34 24" className="h-6 w-9 shrink-0 drop-shadow-[0_0_6px_var(--color-cyan)]">
           <defs>

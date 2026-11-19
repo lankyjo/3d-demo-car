@@ -19,7 +19,9 @@ src/
     fleet/                selected car, fleet strip paging; home-page panels
     trip/                 hub, dates, extras; days + quote selectors; TripPanel
     checkout/             driver form, booking; DriverPanel, Confirmation, Checkout
-  components/             shared UI (ui.tsx primitives, Header, Stage, CarViewer)
+    scene/                the full-screen 3D car behind every page, and the page-to-page choreography
+                          (SceneBackdrop, CarViewer, Stage slot, Stagger, TravelLink, PageShell)
+  components/             shared UI (ui.tsx primitives, Header)
   lib/                    data + pure logic, no React (cars.ts, telemetry.ts)
 ```
 
