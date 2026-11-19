@@ -1,24 +1,20 @@
-# Toyota 3D Configurator
+# OGA Fleet
 
-A Vite + React + TypeScript + React Three Fiber demo built around the supplied `sample.glb`.
-
-## Run
+Next-gen rental fleet UI: Next.js (App Router) + Redux Toolkit + Tailwind v4 + React Three Fiber.
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
+npm run lint       # includes the useState/useReducer ban
+npm test           # pricing checks (node --test)
 ```
 
-Then open the local URL printed by Vite.
+## Layout
 
-## Model
+- `src/app/` routes: `/` fleet console, `/checkout`, `not-found`. `globals.css` holds the design tokens (`@theme`) and the `bevel`, `hud`, `scene` utilities.
+- `src/store/` all app state. One slice per concern (`fleetSlice`, `tripSlice`, `checkoutSlice`); `store.ts` has typed hooks and selectors. `useState`/`useReducer` are banned by ESLint.
+- `src/features/` page sections (`fleet/`, `checkout/`).
+- `src/components/` shared UI (`ui.tsx` panel/label/CTA, `Header`, `Stage`, `CarViewer`).
+- `src/lib/` data and pure logic (`cars.ts` fleet + pricing, `telemetry.ts` mock telemetry).
 
-The uploaded model is already wired in at:
-
-`public/models/sample.glb`
-
-To test another file, replace that GLB with your own file using the same name, or change the path in `src/components/CarModel.tsx`.
-
-## Paint recoloring
-
-The uploaded GLB has red paint baked into its texture, so this demo performs a browser-side red-pixel recolor. It is good for prototyping, but a production configurator should ideally use a separate body-paint material or a body mask texture.
+Telemetry (GPS, battery, availability) is mock data; see `src/lib/telemetry.ts`.
