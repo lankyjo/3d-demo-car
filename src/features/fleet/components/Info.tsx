@@ -1,13 +1,6 @@
 import { cars, credit } from '@/lib/cars'
+import { requirements, steps } from '@/lib/content'
 import { Label, Panel } from '@/components/ui'
-
-const steps = [
-  ['01', 'Pick a unit', 'Browse the fleet, spin the car in 3D, check its week.'],
-  ['02', 'Lock your dates', 'Weekly rate is 20% under daily. Rates hold for 48 hours.'],
-  ['03', 'Deploy', 'Pick up at your nearest hub with your licence and go.'],
-]
-
-const requirements = ['21 or older', 'Full driving licence held 2+ years', 'Rideshare drivers: Uber/Lyft account in good standing', 'Card in the driver’s name']
 
 // Below-the-fold sections the header nav links to.
 export function Info() {
