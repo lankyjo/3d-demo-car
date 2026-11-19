@@ -1,8 +1,7 @@
 import { Suspense, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Bounds, Center, Clone, ContactShadows, Environment, Lightformer, MeshReflectorMaterial, OrbitControls, useGLTF, useProgress } from '@react-three/drei'
-import { PrototypeSwitcher, useVariant } from './variants/PrototypeSwitcher'
-import { variants } from './variants/variants'
+import { VariantE } from './variants/VariantE'
 import { cars, credit, extras, localDate, locations, money, quote, rentalDays, type Car } from './cars'
 
 type Step = 'fleet' | 'details' | 'checkout'
@@ -41,20 +40,16 @@ export default function App() {
     setStep('fleet')
   }
 
-  // PROTOTYPE: the home page is a redesign candidate picked by ?variant=A..E (default: variantKeys[0]).
-  const variant = useVariant()
   if (step === 'fleet') {
-    const Variant = variants[variant]
     return (
       <>
-        <Variant onPick={pickCar} />
+        <VariantE onPick={pickCar} />
         <p className="credit credit-home">
           Photos from Wikimedia Commons (CC BY-SA):{' '}
           {cars.map((c, i) => (
             <span key={c.id}>{i > 0 && ', '}<a href={credit(c.image)} target="_blank" rel="noreferrer">{c.model}</a></span>
           ))}
         </p>
-        <PrototypeSwitcher current={variant} />
       </>
     )
   }
