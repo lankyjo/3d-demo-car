@@ -15,6 +15,7 @@ const R = CAR_LENGTH * 0.62 // turntable radius
 const FOV = 38
 const TARGET = new THREE.Vector3(0, 0.45, 0) // just under the car's waistline
 const START = -0.4 // resting pose: side-on three-quarter, nose to the left
+const SPIN = 1.4 // top speed of the transition spin, rad/s (one turn in about 4.5s)
 const { damp, degToRad } = THREE.MathUtils
 
 // Where the scene sits on the full-screen canvas for each page, on desktop and on phones (< 1024px wide):
@@ -178,9 +179,9 @@ function Car({ id, view }: { id: string; view: View }) {
       car.rotation.y += dt * 0.08
       return
     }
-    // The next resting pose at least three-quarters of a turn ahead.
-    rest.current ??= START + Math.ceil((car.rotation.y + Math.PI * 1.5 - START) / (Math.PI * 2)) * Math.PI * 2
-    car.rotation.y = damp(car.rotation.y, rest.current, 1.5, dt)
+    // The next resting pose at least a third of a turn ahead; approach it at no more than SPIN rad/s, easing out.
+    rest.current ??= START + Math.ceil((car.rotation.y + Math.PI * 0.66 - START) / (Math.PI * 2)) * Math.PI * 2
+    car.rotation.y += Math.min(damp(car.rotation.y, rest.current, 2, dt) - car.rotation.y, SPIN * dt)
   })
   return (
     <group ref={turntable} rotation-y={START}>
