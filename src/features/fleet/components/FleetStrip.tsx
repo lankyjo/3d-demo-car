@@ -2,8 +2,9 @@
 import Image from 'next/image'
 import { cars } from '@/lib/cars'
 import { telemetry } from '@/lib/telemetry'
-import { nextPage, PAGE_SIZE, PAGES, select } from '@/store/fleetSlice'
-import { useAppDispatch, useAppSelector } from '@/store/store'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { selectCar, selectPage } from '../fleetSelectors'
+import { nextPage, PAGE_SIZE, PAGES, select } from '../fleetSlice'
 import { Chevrons, Label, Panel } from '@/components/ui'
 
 // Photo tint per slot: cyan → violet across the strip, like the reference.
@@ -11,7 +12,8 @@ const hues = [165, 188, 208]
 
 export function FleetStrip() {
   const dispatch = useAppDispatch()
-  const { page, selectedId } = useAppSelector((s) => s.fleet)
+  const page = useAppSelector(selectPage)
+  const selectedId = useAppSelector(selectCar).id
   const shown = cars.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
 
   return (

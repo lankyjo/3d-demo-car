@@ -1,7 +1,8 @@
 'use client'
 import { money, weeklyRate } from '@/lib/cars'
 import { days, telemetry } from '@/lib/telemetry'
-import { selectCar, useAppSelector } from '@/store/store'
+import { useAppSelector } from '@/store/hooks'
+import { selectCar } from '../fleetSelectors'
 import { Check, Dot, Label, Panel, Row } from '@/components/ui'
 
 // This week's open days for the selected unit, in place of a utilization chart: it answers "can I get it?".

@@ -1,6 +1,7 @@
 'use client'
 import { clock, telemetry } from '@/lib/telemetry'
-import { selectCar, useAppSelector } from '@/store/store'
+import { useAppSelector } from '@/store/hooks'
+import { selectCar } from '../fleetSelectors'
 import { Dot, Label, Panel, Pin, Row } from '@/components/ui'
 
 function Meter({ label, value, ratio }: { label: string; value: string; ratio: number }) {
