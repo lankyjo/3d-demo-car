@@ -7,12 +7,10 @@ const CarViewer = dynamic(() => import('./CarViewer').then((m) => m.CarViewer), 
   loading: () => <Label className="absolute inset-0 justify-center">Initializing scan…</Label>,
 })
 
-// The hero: 3D car on its turntable, smoke glow on both sides, scan line underneath.
-export function Stage({ carId }: { carId: string }) {
+// The hero: 3D car on its turntable with the scan line underneath.
+export function Stage({ carId, className = 'flex-1' }: { carId: string; className?: string }) {
   return (
-    <div className="relative h-[46vh] min-h-72 w-full flex-1 lg:h-auto lg:min-h-80">
-      <div aria-hidden className="absolute top-[28%] left-[2%] h-[40%] w-1/3 rounded-full bg-haze/14 blur-3xl" />
-      <div aria-hidden className="absolute top-[28%] right-[2%] h-[40%] w-1/3 rounded-full bg-haze/14 blur-3xl" />
+    <div className={`relative min-h-48 w-full lg:min-h-80 ${className}`}>
       <div className="absolute -inset-x-6 top-0 -bottom-28 [mask-image:linear-gradient(to_bottom,black_78%,transparent)]">
         <CarViewer id={carId} />
       </div>

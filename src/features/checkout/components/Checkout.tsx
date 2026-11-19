@@ -16,8 +16,8 @@ export function Checkout() {
   const t = telemetry(car)
 
   return (
-    <main className="grid gap-6 px-4 pt-6 pb-10 sm:px-8 lg:grid-cols-[20rem_1fr_22rem]">
-      <div className="order-2 lg:order-1">{!booking && <TripPanel />}</div>
+    <main className="grid gap-6 overflow-x-clip px-4 pt-6 pb-10 sm:px-8 lg:grid-cols-[20rem_1fr_22rem]">
+      <div className="relative z-10 order-2 lg:order-1">{!booking && <TripPanel />}</div>
       <div className="order-1 flex flex-col items-center gap-4 lg:order-2">
         {!booking && (
           <Link href="/" className="hud flex items-center gap-2 self-start text-mute transition hover:text-cyan">
@@ -28,9 +28,9 @@ export function Checkout() {
           <Label className="justify-center">Unit {t.unit} · {t.vehicleId}</Label>
           <h1 className="mt-2 font-display text-2xl tracking-[0.08em] uppercase">{car.brand} {car.model}</h1>
         </div>
-        <Stage carId={car.id} />
+        <Stage carId={car.id} className="h-[38vh] lg:h-auto lg:flex-1" />
       </div>
-      <div className="order-3">{booking ? <Confirmation bookingRef={booking.ref} /> : <DriverPanel />}</div>
+      <div className="relative z-10 order-3">{booking ? <Confirmation bookingRef={booking.ref} /> : <DriverPanel />}</div>
     </main>
   )
 }

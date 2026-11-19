@@ -2,7 +2,7 @@
 // 3D car on a neon turntable. Fills its parent (parent needs a size + position: relative). Client-only: load via next/dynamic.
 import { Suspense, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Center, ContactShadows, Environment, Grid, Lightformer, OrbitControls, useGLTF } from '@react-three/drei'
+import { Center, Environment, Grid, Lightformer, MeshReflectorMaterial, OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
@@ -66,30 +66,13 @@ const spokes = (() => {
   return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3))
 })()
 
-// Dark navy disc top with a soft blue sheen: brighter mid-ring, darker centre and rim.
-function discSheen() {
-  const c = document.createElement('canvas')
-  c.width = c.height = 256
-  const ctx = c.getContext('2d')!
-  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128)
-  g.addColorStop(0, '#0a1430')
-  g.addColorStop(0.55, '#122450')
-  g.addColorStop(1, '#0a1632')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, 256, 256)
-  const texture = new THREE.CanvasTexture(c)
-  texture.colorSpace = THREE.SRGBColorSpace
-  return texture
-}
-
 // Two-tier turntable: a dark glossy disc edged by the neon ring, on a wider low base.
 function Platform() {
-  const sheen = useMemo(() => discSheen(), [])
   return (
     <group>
       <mesh position-y={-R * 0.09}>
         <cylinderGeometry args={[R * 1.11, R * 1.13, R * 0.04, 128]} />
-        <meshStandardMaterial color="#0a1226" metalness={0.3} roughness={0.7} envMapIntensity={0.2} />
+        <meshStandardMaterial color="#05182e" metalness={0.3} roughness={0.7} envMapIntensity={0.2} />
       </mesh>
       <mesh {...flat} position-y={-R * 0.068}>
         <ringGeometry args={[R * 1.1, R * 1.108, 128]} />
@@ -97,12 +80,26 @@ function Platform() {
       </mesh>
       <mesh position-y={-R * 0.035}>
         <cylinderGeometry args={[R * 1.03, R * 1.05, R * 0.07, 128]} />
-        <meshStandardMaterial color="#0b1530" metalness={0.3} roughness={0.7} envMapIntensity={0.15} />
+        <meshStandardMaterial color="#061c36" metalness={0.3} roughness={0.7} envMapIntensity={0.15} />
       </mesh>
-      {/* Unlit top face: the scene lights would wash a lit disc out to grey. */}
+      {/* Navy top face with a soft, blurred mirror of the car. Mostly metal and no env map, so the scene lights
+          tint it instead of washing it out to grey. */}
       <mesh {...flat} position-y={0.002}>
         <circleGeometry args={[R * 1.03, 128]} />
-        <meshBasicMaterial map={sheen} toneMapped={false} />
+        <MeshReflectorMaterial
+          resolution={1024}
+          blur={[160, 50]}
+          mixBlur={0.7}
+          mixStrength={7}
+          mirror={0.8}
+          depthScale={1.1}
+          minDepthThreshold={0.25}
+          maxDepthThreshold={1.4}
+          color="#06203d"
+          metalness={0.75}
+          roughness={0.85}
+          envMapIntensity={0}
+        />
       </mesh>
       {[0.22, 0.42, 0.62, 0.82].map((r) => (
         <mesh key={r} {...flat} position-y={0.004}>
@@ -123,15 +120,31 @@ function Platform() {
   )
 }
 
+// Soft dark blob the size of the car's footprint. (drei's ContactShadows rendered nothing in this scene.)
+function blobShadow() {
+  const c = document.createElement('canvas')
+  c.width = c.height = 128
+  const ctx = c.getContext('2d')!
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
+  g.addColorStop(0, 'rgba(0,2,8,0.95)')
+  g.addColorStop(0.55, 'rgba(0,2,8,0.75)')
+  g.addColorStop(1, 'rgba(0,2,8,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 128, 128)
+  return new THREE.CanvasTexture(c)
+}
+
 function Scene({ id }: { id: string }) {
   const { scene } = useGLTF(`/models/${id}.glb`)
   // Every GLB is scaled to the same length so one camera framing fits them all.
-  const model = useMemo(() => {
+  const { model, footprint } = useMemo(() => {
     const model = scene.clone(true)
     const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3())
-    model.scale.setScalar(CAR_LENGTH / Math.max(size.x, size.z))
-    return model
+    const k = CAR_LENGTH / Math.max(size.x, size.z)
+    model.scale.setScalar(k)
+    return { model, footprint: [size.x * k * 0.62, size.z * k * 0.62, 1] as const }
   }, [scene])
+  const shadow = useMemo(() => blobShadow(), [])
   // The car turns on the disc; the camera and the ring's cyan-left / violet-right gradient stay put.
   const turntable = useRef<THREE.Group>(null)
   useFrame((_, dt) => {
@@ -144,6 +157,10 @@ function Scene({ id }: { id: string }) {
         <Center top>
           <primitive object={model} />
         </Center>
+        <mesh {...flat} position-y={0.012} scale={footprint}>
+          <circleGeometry args={[1, 48]} />
+          <meshBasicMaterial map={shadow} transparent depthWrite={false} toneMapped={false} />
+        </mesh>
       </group>
       <Platform />
       {/* Ground grid under the turntable; fades out with distance so it never meets the canvas edge. */}
@@ -159,7 +176,6 @@ function Scene({ id }: { id: string }) {
         fadeDistance={26}
         fadeStrength={2.2}
       />
-      <ContactShadows position-y={0.008} opacity={0.9} scale={R * 2} blur={2} far={R} />
     </>
   )
 }
@@ -169,14 +185,14 @@ export function CarViewer({ id }: { id: string }) {
     <Canvas style={{ position: 'absolute', inset: 0 }} camera={{ position: [5, 1.45, 4.3], fov: FOV }} dpr={[1, 2]} gl={{ alpha: true }}>
       <ambientLight intensity={1.3} />
       <directionalLight position={[5, 6, 4]} intensity={2.2} />
-      <directionalLight position={[-4, 3, -3]} intensity={1.4} color="#9ab8ff" />
+      <directionalLight position={[-4, 3, -3]} intensity={1.4} color="#9fd4ff" />
       <Suspense fallback={null}>
         <Scene key={id} id={id} />
       </Suspense>
       <Environment resolution={256} environmentIntensity={0.8}>
         <Lightformer intensity={2} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
         <Lightformer intensity={2.5} color="#27e1ff" position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[10, 2, 1]} />
-        <Lightformer intensity={2.5} color="#8fb4ff" position={[5, 1, 1]} rotation-y={-Math.PI / 2} scale={[10, 2, 1]} />
+        <Lightformer intensity={2.5} color="#6fc3ff" position={[5, 1, 1]} rotation-y={-Math.PI / 2} scale={[10, 2, 1]} />
       </Environment>
       <OrbitControls makeDefault target={TARGET} enablePan={false} minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 2.08} />
     </Canvas>
