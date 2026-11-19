@@ -1,11 +1,17 @@
 // Shared HUD building blocks. Colours, fonts and the bevel shape come from tokens in app/globals.css.
 
-// Glass card with a cyan→violet gradient edge and outer glow.
-export function Panel({ children, className = '', padding = 'p-5' }: { children: React.ReactNode; className?: string; padding?: string }) {
+// Cockpit tilt for the side cards on desktop: the outer edge comes toward the viewer.
+const tilts = {
+  left: 'lg:origin-left lg:[transform:perspective(1100px)_rotateY(7deg)]',
+  right: 'lg:origin-right lg:[transform:perspective(1100px)_rotateY(-7deg)]',
+}
+
+// Near-black notched card with a thin ice-blue edge and a soft outer glow.
+export function Panel({ children, className = '', padding = 'p-5', tilt }: { children: React.ReactNode; className?: string; padding?: string; tilt?: keyof typeof tilts }) {
   return (
-    <section className={`drop-shadow-[0_0_14px_rgb(39_225_255/0.16)] ${className}`}>
-      <div className="bevel h-full bg-linear-to-br from-cyan/60 via-line to-violet/55 p-px">
-        <div className={`bevel h-full bg-panel backdrop-blur-md ${padding}`}>{children}</div>
+    <section className={`drop-shadow-[0_0_10px_rgb(58_123_255/0.2)] ${tilt ? tilts[tilt] : ''} ${className}`}>
+      <div className="bevel panel-edge h-full p-px">
+        <div className={`bevel h-full bg-panel ${padding}`}>{children}</div>
       </div>
     </section>
   )
@@ -14,7 +20,7 @@ export function Panel({ children, className = '', padding = 'p-5' }: { children:
 export const Dot = ({ tone = 'cyan' }: { tone?: 'cyan' | 'alert' }) => (
   <span
     aria-hidden
-    className={`inline-block size-1.5 animate-blink rounded-full ${tone === 'cyan' ? 'bg-cyan shadow-[0_0_8px_var(--color-cyan)]' : 'bg-alert shadow-[0_0_8px_var(--color-alert)]'}`}
+    className={`inline-block size-2 shrink-0 animate-blink rounded-full ${tone === 'cyan' ? 'bg-cyan shadow-[0_0_8px_var(--color-cyan)]' : 'bg-alert shadow-[0_0_8px_var(--color-alert)]'}`}
   />
 )
 
@@ -26,17 +32,24 @@ export const Label = ({ children, className = '' }: { children: React.ReactNode;
 export const Row = ({ label, children }: { label: React.ReactNode; children: React.ReactNode }) => (
   <div className="border-b border-line py-3.5 last:border-0">
     <Label>{label}</Label>
-    <div className="mt-1.5 flex items-center justify-between gap-3 text-[15px] tracking-[0.08em] text-ink uppercase">{children}</div>
+    <div className="mt-1.5 flex items-center gap-3 text-[15px] tracking-[0.08em] text-ink uppercase">{children}</div>
   </div>
 )
 
 // Big glowing call to action; wrap it in a <Link> or <button> with className="group block".
 export const Cta = ({ children }: { children: React.ReactNode }) => (
-  <span className="block drop-shadow-[0_0_18px_rgb(58_123_255/0.55)] transition group-hover:drop-shadow-[0_0_26px_rgb(39_225_255/0.7)] group-disabled:opacity-40">
-    <span className="bevel block bg-linear-to-r from-cyan via-azure to-violet p-[2px]">
-      <span className="bevel flex items-center justify-center gap-4 bg-abyss/95 px-10 py-5 font-display text-lg tracking-[0.3em] text-ink uppercase transition group-hover:bg-abyss/70">
+  <span className="block drop-shadow-[0_0_22px_rgb(58_123_255/0.7)] transition group-hover:drop-shadow-[0_0_30px_rgb(39_225_255/0.8)] group-disabled:opacity-40">
+    <span className="bevel block bg-linear-to-r from-cyan via-azure to-violet p-[3px]">
+      <span className="bevel flex items-center justify-center gap-5 bg-abyss bg-linear-to-r from-azure/25 via-transparent to-violet/20 px-8 py-5 font-display text-base tracking-[0.28em] whitespace-nowrap text-ink uppercase [-webkit-text-stroke:0.5px_currentColor] [text-shadow:0_0_12px_rgb(230_238_255/0.5)] transition group-hover:from-azure/40">
         {children}
-        <Chevrons className="text-cyan" />
+        <svg aria-hidden viewBox="0 0 34 24" className="h-6 w-9 shrink-0 drop-shadow-[0_0_6px_var(--color-cyan)]">
+          <defs>
+            <linearGradient id="cta-chev" x1="0" x2="1">
+              <stop offset="0" stopColor="var(--color-cyan)" /><stop offset="1" stopColor="var(--color-azure)" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#cta-chev)" d="M0 0h7l10 12L7 24H0l10-12zM15 0h7l10 12-10 12h-7l10-12z" />
+        </svg>
       </span>
     </span>
   </span>

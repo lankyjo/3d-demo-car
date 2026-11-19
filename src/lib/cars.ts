@@ -40,6 +40,10 @@ export const cars: Car[] = [
     image: commons + '9/9e/Tesla_Model_S_%28Facelift_ab_04-2016%29_%28cropped%29.jpg' },
 ]
 
+// Cars with a side-profile photo at public/cars/<id>-side.webp; the rest only have the front three-quarter shot.
+const sideViews = new Set(['toyota-camry', 'toyota-rav4', 'toyota-land-cruiser', 'mercedes-c-class'])
+export const thumb = (car: Car) => `/cars/${car.id}${sideViews.has(car.id) ? '-side' : ''}.webp`
+
 export const carById = (id: string) => cars.find((c) => c.id === id) ?? cars[0]
 
 // Commons page with author + license (CC BY-SA needs attribution).

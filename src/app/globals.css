@@ -2,7 +2,7 @@
 
 /* Fonts come from next/font CSS variables set on <html>. */
 @theme inline {
-  --font-display: var(--font-orbitron), ui-sans-serif, sans-serif;
+  --font-display: var(--font-michroma), ui-sans-serif, sans-serif;
   --font-sans: var(--font-oxanium), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -10,21 +10,22 @@
   /* Surfaces, darkest first */
   --color-void: #02040a;
   --color-abyss: #060a16;
-  --color-panel: rgb(7 12 26 / 0.8);
+  --color-panel: #050912;
   --color-line: rgb(110 160 255 / 0.16);
 
   /* Text */
   --color-ink: #e6eeff;
-  --color-mute: #7d8fb0;
+  --color-mute: #a3b1cc;
 
   /* Neon accents: cyan → azure → violet */
+  --color-ice: #9fd4ff; /* panel edges */
   --color-cyan: #27e1ff;
   --color-azure: #3a7bff;
   --color-violet: #9a5bff;
   --color-alert: #ff4d7a;
 
   --tracking-hud: 0.18em;
-  --bevel: 14px;
+  --bevel: 9px;
 
   --animate-blink: blink 2s ease-in-out infinite;
   @keyframes blink {
@@ -47,12 +48,29 @@
   text-transform: uppercase;
 }
 
-/* Glow + perspective grid behind everything. */
+/* Thin panel border: bright at the top-left and bottom-right corners, dim along the sides. */
+@utility panel-edge {
+  background: linear-gradient(
+    135deg,
+    var(--color-ice) 0,
+    color-mix(in oklab, var(--color-ice) 38%, transparent) 9%,
+    color-mix(in oklab, var(--color-ice) 22%, transparent) 50%,
+    color-mix(in oklab, var(--color-ice) 38%, transparent) 91%,
+    var(--color-ice) 100%
+  );
+}
+
+/* Near-black room: blue haze only behind the car, a few distant particles, dark vignette. */
 @utility scene {
   background:
-    radial-gradient(ellipse 60% 45% at 50% 38%, rgb(58 123 255 / 0.16), transparent 70%),
-    radial-gradient(ellipse 35% 30% at 22% 45%, rgb(39 225 255 / 0.07), transparent 70%),
-    radial-gradient(ellipse 35% 30% at 78% 45%, rgb(154 91 255 / 0.08), transparent 70%),
+    radial-gradient(1.5px 1.5px at 12% 22%, rgb(160 200 255 / 0.5), transparent),
+    radial-gradient(1px 1px at 31% 64%, rgb(160 200 255 / 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 68% 17%, rgb(160 200 255 / 0.45), transparent),
+    radial-gradient(1px 1px at 86% 58%, rgb(160 200 255 / 0.4), transparent),
+    radial-gradient(1px 1px at 44% 9%, rgb(160 200 255 / 0.35), transparent),
+    radial-gradient(1px 1px at 93% 31%, rgb(160 200 255 / 0.35), transparent),
+    radial-gradient(ellipse 46% 40% at 50% 40%, rgb(58 123 255 / 0.2), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / 0.6)),
     var(--color-void);
 }
 

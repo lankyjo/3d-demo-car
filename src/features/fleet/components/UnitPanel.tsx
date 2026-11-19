@@ -22,17 +22,20 @@ export function UnitPanel() {
   const open = t.week.some(Boolean)
 
   return (
-    <Panel>
+    <Panel className="h-full" tilt="left">
+      <div className="flex h-full flex-col justify-between">
+      <div>
       <Label><Dot /> Unit ID</Label>
-      <h2 className="mt-3 border-b border-line pb-4 font-display text-lg tracking-[0.08em] uppercase">
+      <h2 className="mt-3 border-b border-line pb-4 text-[17px] leading-snug tracking-[0.08em] text-balance uppercase">
         Unit {t.unit} / {car.brand === 'Mercedes-Benz' ? 'Mercedes' : car.brand} {car.model}
       </h2>
+      </div>
       <Row label="Status">
         <span className={open ? 'text-cyan' : 'text-alert'}>{open ? 'Online' : 'Booked out'}</span>
         <Dot tone={open ? 'cyan' : 'alert'} />
       </Row>
       <Row label="GPS lock">
-        <span className="text-cyan">{t.gps}</span>
+        <span className="flex-1 text-cyan">{t.gps}</span>
         <Pin />
       </Row>
       <div className="my-2 border border-line bg-abyss/50 p-3">
@@ -42,8 +45,9 @@ export function UnitPanel() {
         <Meter label={t.energyLabel} value={`${t.energy}%`} ratio={t.energy / 100} />
       </div>
       <Row label="Last sync">
-        <span className="font-display tabular-nums">{clock(t.lastSync)} ago</span>
+        <span className="text-lg tabular-nums">{clock(t.lastSync)} ago</span>
       </Row>
+      </div>
     </Panel>
   )
 }

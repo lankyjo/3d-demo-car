@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Orbitron, Oxanium } from 'next/font/google'
+import { Michroma, Oxanium } from 'next/font/google'
 import { StoreProvider } from '@/store/StoreProvider'
 import './globals.css'
 
-const display = Orbitron({ subsets: ['latin'], variable: '--font-orbitron' })
+const display = Michroma({ subsets: ['latin'], weight: '400', variable: '--font-michroma' })
 const sans = Oxanium({ subsets: ['latin'], variable: '--font-oxanium' })
 
 export const metadata: Metadata = {
