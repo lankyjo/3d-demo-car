@@ -3,8 +3,8 @@ import Image from 'next/image'
 import { cars } from '@/lib/cars'
 import { telemetry } from '@/lib/telemetry'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { selectCar, selectPage } from '../fleetSelectors'
-import { nextPage, PAGE_SIZE, PAGES, select } from '../fleetSlice'
+import { selectCar, selectPage } from '../slice/fleetSelectors'
+import { nextPage, PAGE_SIZE, PAGES, select } from '../slice/fleetSlice'
 import { Chevrons, Label, Panel } from '@/components/ui'
 
 // Photo tint per slot: cyan → violet across the strip, like the reference.

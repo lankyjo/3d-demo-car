@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { checkoutSlice } from '@/features/checkout/checkoutSlice'
-import { fleetSlice } from '@/features/fleet/fleetSlice'
-import { tripSlice } from '@/features/trip/tripSlice'
+import { checkoutSlice } from '@/features/checkout/slice/checkoutSlice'
+import { fleetSlice } from '@/features/fleet/slice/fleetSlice'
+import { tripSlice } from '@/features/trip/slice/tripSlice'
 
 export const makeStore = () =>
   configureStore({

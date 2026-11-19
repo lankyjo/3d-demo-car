@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit'
 import { quote, rentalDays } from '@/lib/cars'
-import { selectCar } from '@/features/fleet/fleetSelectors'
+import { selectCar } from '@/features/fleet/slice/fleetSelectors'
 import type { RootState } from '@/store/store'
 
 export const selectTrip = (s: RootState) => s.trip

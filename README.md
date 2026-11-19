@@ -15,7 +15,7 @@ npm test           # pricing checks (node --test)
 src/
   app/                    routes only (/, /checkout, not-found) + globals.css design tokens
   store/                  wiring only: store.ts (configureStore + types), hooks.ts, StoreProvider.tsx
-  features/<name>/        one folder per domain: <name>Slice.ts, <name>Selectors.ts, components/
+  features/<name>/        one folder per domain: slice/ (<name>Slice.ts, <name>Selectors.ts) + components/
     fleet/                selected car, fleet strip paging; home-page panels
     trip/                 hub, dates, extras; days + quote selectors; TripPanel
     checkout/             driver form, booking; DriverPanel, Confirmation, Checkout

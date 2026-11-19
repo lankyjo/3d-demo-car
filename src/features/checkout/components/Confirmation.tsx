@@ -2,10 +2,10 @@
 import Link from 'next/link'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { Cta, Dot, Label, Panel } from '@/components/ui'
-import { clearExtras } from '@/features/trip/tripSlice'
-import { selectDays, selectQuote, selectTrip } from '@/features/trip/tripSelectors'
-import { selectDriver } from '../checkoutSelectors'
-import { reset } from '../checkoutSlice'
+import { clearExtras } from '@/features/trip/slice/tripSlice'
+import { selectDays, selectQuote, selectTrip } from '@/features/trip/slice/tripSelectors'
+import { selectDriver } from '../slice/checkoutSelectors'
+import { reset } from '../slice/checkoutSlice'
 import { Summary } from './Summary'
 
 export function Confirmation({ bookingRef }: { bookingRef: string }) {

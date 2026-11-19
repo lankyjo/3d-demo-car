@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { telemetry } from '@/lib/telemetry'
 import { useAppSelector } from '@/store/hooks'
-import { selectCar } from '../fleetSelectors'
+import { selectCar } from '../slice/fleetSelectors'
 import { Stage } from '@/components/Stage'
 import { Cta, Label } from '@/components/ui'
 import { FleetStrip } from './FleetStrip'

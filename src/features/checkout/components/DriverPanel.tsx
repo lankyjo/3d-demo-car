@@ -1,9 +1,9 @@
 'use client'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { Cta, Dot, Label, Panel } from '@/components/ui'
-import { selectDays, selectQuote } from '@/features/trip/tripSelectors'
-import { selectDriver } from '../checkoutSelectors'
-import { confirm, setDriverField, type Driver } from '../checkoutSlice'
+import { selectDays, selectQuote } from '@/features/trip/slice/tripSelectors'
+import { selectDriver } from '../slice/checkoutSelectors'
+import { confirm, setDriverField, type Driver } from '../slice/checkoutSlice'
 import { Summary } from './Summary'
 
 const driverFields: [field: keyof Driver, label: string, type: string, autoComplete: string][] = [

@@ -2,8 +2,8 @@
 import { extras, locations, localDate, money } from '@/lib/cars'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { Dot, Label, Panel } from '@/components/ui'
-import { selectDays, selectTrip } from '../tripSelectors'
-import { setDropoff, setLocation, setPickup, toggleExtra } from '../tripSlice'
+import { selectDays, selectTrip } from '../slice/tripSelectors'
+import { setDropoff, setLocation, setPickup, toggleExtra } from '../slice/tripSlice'
 
 export function TripPanel() {
   const dispatch = useAppDispatch()
