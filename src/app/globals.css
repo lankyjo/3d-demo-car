@@ -8,8 +8,8 @@
 
 @theme {
   /* Surfaces, darkest first */
-  --color-void: #02040a;
-  --color-abyss: #060a16;
+  --color-void: #01030a;
+  --color-abyss: #040a16;
   --color-panel: #050912;
   --color-line: rgb(110 160 255 / 0.16);
 
@@ -19,6 +19,7 @@
 
   /* Neon accents: cyan → azure → violet */
   --color-ice: #9fd4ff; /* panel edges */
+  --color-haze: #0a6cff; /* background glow: low red so it never reads purple on black */
   --color-cyan: #27e1ff;
   --color-azure: #3a7bff;
   --color-violet: #9a5bff;
@@ -69,15 +70,15 @@
     radial-gradient(1px 1px at 86% 58%, rgb(160 200 255 / 0.4), transparent),
     radial-gradient(1px 1px at 44% 9%, rgb(160 200 255 / 0.35), transparent),
     radial-gradient(1px 1px at 93% 31%, rgb(160 200 255 / 0.35), transparent),
-    radial-gradient(ellipse 46% 40% at 50% 40%, rgb(58 123 255 / 0.2), transparent 70%),
+    radial-gradient(ellipse 46% 40% at 50% 40%, color-mix(in srgb, var(--color-haze) 18%, transparent), transparent 70%),
     radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / 0.6)),
     var(--color-void);
 }
 
 @utility scene-grid {
   background-image:
-    linear-gradient(to right, rgb(110 160 255 / 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(110 160 255 / 0.07) 1px, transparent 1px);
+    linear-gradient(to right, rgb(80 160 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(80 160 255 / 0.07) 1px, transparent 1px);
   background-size: 64px 64px;
   transform: perspective(600px) rotateX(62deg);
   transform-origin: top;

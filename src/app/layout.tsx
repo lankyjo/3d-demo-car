@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Next-gen rental fleet system. Pick a unit, lock your dates, deploy.',
 }
 
-export const viewport: Viewport = { themeColor: '#02040a' }
+export const viewport: Viewport = { themeColor: '#01030a' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

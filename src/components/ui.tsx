@@ -9,7 +9,7 @@ const tilts = {
 // Near-black notched card with a thin ice-blue edge and a soft outer glow.
 export function Panel({ children, className = '', padding = 'p-5', tilt }: { children: React.ReactNode; className?: string; padding?: string; tilt?: keyof typeof tilts }) {
   return (
-    <section className={`drop-shadow-[0_0_10px_rgb(58_123_255/0.2)] ${tilt ? tilts[tilt] : ''} ${className}`}>
+    <section className={`drop-shadow-[0_0_10px_rgb(10_108_255/0.22)] ${tilt ? tilts[tilt] : ''} ${className}`}>
       <div className="bevel panel-edge h-full p-px">
         <div className={`bevel h-full bg-panel ${padding}`}>{children}</div>
       </div>

@@ -20,10 +20,10 @@ export function FleetConsole() {
         <div className="relative z-10 order-2 lg:order-1 lg:pb-20"><UnitPanel /></div>
         <div className="order-1 flex flex-col items-center gap-4 lg:order-2">
           <Stage carId={car.id} />
-          <Link href="/checkout" className="group block w-full max-w-md">
+          <Link href="/checkout" className="group relative z-10 block w-full max-w-md">
             <Cta>Deploy this car</Cta>
           </Link>
-          <Label className="flex-wrap justify-center">
+          <Label className="relative z-10 flex-wrap justify-center">
             Est. deploy time: <span className="text-ink tabular-nums">00:{t.deploySecs}</span>
             <span className="size-1.5 rounded-full bg-cyan" />
             Vehicle ID: <span className="text-ink">{t.vehicleId}</span>
