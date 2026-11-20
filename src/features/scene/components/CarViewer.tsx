@@ -32,8 +32,8 @@ const { damp, degToRad } = THREE.MathUtils
 //   tall  full height, car roof to the front edge of the base
 // Both are generous on purpose: perspective makes the near edge of the base wider than it is at the car.
 const FIT: Record<View, { wide: number; tall: number }> = {
-  fleet: { wide: R * 1.75, tall: 3.4 },
-  checkout: { wide: R * 1.45, tall: 3.2 },
+  fleet: { wide: R * 1.55, tall: 3.0 },
+  checkout: { wide: R * 1.32, tall: 2.85 },
 }
 
 // Fits the scene to the page's <Stage> element: reads its on-screen box every frame and eases the camera distance
@@ -212,7 +212,7 @@ function Car({ id, leaving = false, instant = false }: { id: string; leaving?: b
   const t = useRef(instant ? 1 : leaving ? 0 : -0.6)
   useFrame((_, dt) => {
     const car = group.current
-    if (!car) return
+    if (!car || (leaving && t.current === 1)) return // a car that has left has nothing more to do
     t.current = Math.min(t.current + dt / SWAP, 1)
     const p = easeOut(Math.max(t.current, 0))
     const size = leaving ? 1 - p : p
@@ -221,7 +221,7 @@ function Car({ id, leaving = false, instant = false }: { id: string; leaving?: b
     car.rotation.y = turntable.angle + (leaving ? p : p - 1) * 0.9 // a little twist on the way out and in
   })
   return (
-    <group ref={group} visible={instant} rotation-y={START}>
+    <group ref={group} visible={instant}>
       <Center top>
         <primitive object={model} />
       </Center>
