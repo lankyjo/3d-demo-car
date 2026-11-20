@@ -7,6 +7,14 @@ import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { View } from '../slice/sceneSelectors'
 
+// react-three-fiber 9 still creates a THREE.Clock internally, which three r183+ reports as deprecated on every load.
+// Nothing in this app can change that, so drop that one message; every other three.js log passes through unchanged.
+// Remove this when fiber stops using Clock (v10).
+THREE.setConsoleFunction((type, message, ...rest) => {
+  if (message.startsWith('THREE.Clock: This module has been deprecated')) return
+  console[type as 'log' | 'warn' | 'error'](message, ...rest)
+})
+
 const CYAN = new THREE.Color('#27e1ff')
 const VIOLET = new THREE.Color('#9a5bff')
 const CAR_LENGTH = 4
