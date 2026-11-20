@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { useAppSelector } from '@/store/hooks'
-import { selectCar } from '@/features/fleet/slice/fleetSelectors'
+import { selectCar, selectPreviousId } from '@/features/fleet/slice/fleetSelectors'
 import { selectView } from '../slice/sceneSelectors'
 
 const CarViewer = dynamic(() => import('./CarViewer').then((m) => m.CarViewer), { ssr: false })
@@ -12,11 +12,12 @@ const CarViewer = dynamic(() => import('./CarViewer').then((m) => m.CarViewer), 
 export function SceneBackdrop() {
   const pathname = usePathname()
   const car = useAppSelector(selectCar)
+  const previousId = useAppSelector(selectPreviousId)
   const view = useAppSelector((s) => selectView(s, pathname))
   if (!view) return null
   return (
     <div className="fixed inset-0 z-0">
-      <CarViewer id={car.id} view={view} />
+      <CarViewer id={car.id} previousId={previousId} view={view} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 import Image from 'next/image'
+import { preload } from 'react-dom'
 import { cars, thumb } from '@/lib/cars'
 import { telemetry } from '@/lib/telemetry'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -19,6 +20,8 @@ export function FleetStrip() {
   const page = useAppSelector(selectPage)
   const selectedId = useAppSelector(selectCar).id
   const shown = cars.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+  // Fetch the models of the cars on offer ahead of the click, so picking one swaps without a wait.
+  for (const car of shown) preload(`/models/${car.id}.glb`, { as: 'fetch', crossOrigin: 'anonymous' })
 
   return (
     <Panel padding="p-0">

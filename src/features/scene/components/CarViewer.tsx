@@ -174,9 +174,30 @@ function blobShadow() {
   return (shadowTexture = new THREE.CanvasTexture(c))
 }
 
-// The car on its turntable. Suspends while the GLB downloads; the platform and grid are drawn outside it, so the
-// room is there from the first frame.
-function Car({ id, view }: { id: string; view: View }) {
+// The turntable's angle, shared by every car on it so a swap carries on from the same angle instead of jumping.
+const turntable = { angle: START, rest: null as number | null }
+
+// Turns the table. Fleet: slow endless spin. Checkout: one unhurried spin on to the resting pose, then still.
+function Turntable({ view }: { view: View }) {
+  useFrame((_, dt) => {
+    if (view === 'fleet') {
+      turntable.rest = null
+      turntable.angle += dt * 0.08
+      return
+    }
+    // The next resting pose at least a third of a turn ahead; approach it at no more than SPIN rad/s, easing out.
+    turntable.rest ??= START + Math.ceil((turntable.angle + Math.PI * 0.66 - START) / (Math.PI * 2)) * Math.PI * 2
+    turntable.angle += Math.min(damp(turntable.angle, turntable.rest, 2, dt) - turntable.angle, SPIN * dt)
+  })
+  return null
+}
+
+const SWAP = 0.55 // seconds for a car to leave or arrive when the selection changes
+const easeOut = (t: number) => 1 - (1 - t) ** 3
+
+// One car on the turntable. `leaving` cars shrink into the disc; arriving cars rise out of it a beat later.
+// Suspends while the GLB downloads; the platform and grid are drawn outside it, so the room is always there.
+function Car({ id, leaving = false, instant = false }: { id: string; leaving?: boolean; instant?: boolean }) {
   const { scene } = useGLTF(`/models/${id}.glb`)
   // Every GLB is scaled to the same length so one camera framing fits them all.
   const { model, footprint } = useMemo(() => {
@@ -186,24 +207,21 @@ function Car({ id, view }: { id: string; view: View }) {
     model.scale.setScalar(k)
     return { model, footprint: [size.x * k * 0.62, size.z * k * 0.62, 1] as const }
   }, [scene])
-  // The car turns on the disc; the camera and the ring's cyan-left / violet-right gradient stay put.
-  // Fleet: slow endless spin. Checkout: one unhurried spin on to the resting pose, then it stays still.
-  const turntable = useRef<THREE.Group>(null)
-  const rest = useRef<number | null>(null)
+  const group = useRef<THREE.Group>(null)
+  // Progress of the swap, 0 → 1. Arrivals start below zero: they wait for the leaving car to get out of the way.
+  const t = useRef(instant ? 1 : leaving ? 0 : -0.6)
   useFrame((_, dt) => {
-    const car = turntable.current
+    const car = group.current
     if (!car) return
-    if (view === 'fleet') {
-      rest.current = null
-      car.rotation.y += dt * 0.08
-      return
-    }
-    // The next resting pose at least a third of a turn ahead; approach it at no more than SPIN rad/s, easing out.
-    rest.current ??= START + Math.ceil((car.rotation.y + Math.PI * 0.66 - START) / (Math.PI * 2)) * Math.PI * 2
-    car.rotation.y += Math.min(damp(car.rotation.y, rest.current, 2, dt) - car.rotation.y, SPIN * dt)
+    t.current = Math.min(t.current + dt / SWAP, 1)
+    const p = easeOut(Math.max(t.current, 0))
+    const size = leaving ? 1 - p : p
+    car.visible = size > 0.001
+    car.scale.setScalar(Math.max(size, 0.001))
+    car.rotation.y = turntable.angle + (leaving ? p : p - 1) * 0.9 // a little twist on the way out and in
   })
   return (
-    <group ref={turntable} rotation-y={START}>
+    <group ref={group} visible={instant} rotation-y={START}>
       <Center top>
         <primitive object={model} />
       </Center>
@@ -215,7 +233,8 @@ function Car({ id, view }: { id: string; view: View }) {
   )
 }
 
-export function CarViewer({ id, view }: { id: string; view: View }) {
+// `previousId` is the car selected before `id` (null until the first change): it animates off as `id` animates on.
+export function CarViewer({ id, previousId, view }: { id: string; previousId: string | null; view: View }) {
   return (
     <Canvas style={{ position: 'absolute', inset: 0 }} camera={{ position: [5, 1.45, 4.3], fov: FOV }} dpr={[1, 2]} gl={{ alpha: true }}>
       <ambientLight intensity={1.3} />
@@ -241,9 +260,15 @@ export function CarViewer({ id, view }: { id: string; view: View }) {
         fadeDistance={42}
         fadeStrength={2.2}
       />
+      <Turntable view={view} />
       <Suspense fallback={null}>
-        <Car key={id} id={id} view={view} />
+        <Car key={id} id={id} instant={!previousId} />
       </Suspense>
+      {previousId && (
+        <Suspense fallback={null}>
+          <Car key={`${previousId}>${id}`} id={previousId} leaving />
+        </Suspense>
+      )}
       <Environment resolution={256} environmentIntensity={0.8}>
         <Lightformer intensity={2} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
         <Lightformer intensity={2.5} color="#27e1ff" position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[10, 2, 1]} />
