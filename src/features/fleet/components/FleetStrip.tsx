@@ -50,7 +50,7 @@ export function FleetStrip() {
                     style={{ filter: `grayscale(1) contrast(1.7) brightness(0.36) sepia(1) hue-rotate(${hue}deg) saturate(4) drop-shadow(0 0 1px ${glow}) drop-shadow(0 0 9px ${glow})` }}
                   />
                   <span className="hud mt-1 block text-ink">Unit {telemetry(car).unit}</span>
-                  <span className="hud block truncate text-[10px] text-ink/85 sm:text-[11px]"><span className="hidden sm:inline">{car.brand} </span>{car.model}</span>
+                  <span className="hud block truncate text-[0.625rem] text-ink/85 sm:text-[0.6875rem]"><span className="hidden sm:inline">{car.brand} </span>{car.model}</span>
                 </button>
               </li>
             )

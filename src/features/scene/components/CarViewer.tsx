@@ -6,6 +6,7 @@ import { Center, Environment, Grid, Lightformer, MeshReflectorMaterial, OrbitCon
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { View } from '../slice/sceneSelectors'
+import { STAGE_ID } from './Stage'
 
 // react-three-fiber 9 still creates a THREE.Clock internally, which three r183+ reports as deprecated on every load.
 // Nothing in this app can change that, so drop that one message; every other three.js log passes through unchanged.
@@ -26,39 +27,49 @@ const START = -0.4 // resting pose: side-on three-quarter, nose to the left
 const SPIN = 1.4 // top speed of the transition spin, rad/s (one turn in about 4.5s)
 const { damp, degToRad } = THREE.MathUtils
 
-// Where the scene sits on the full-screen canvas for each page, on desktop and on phones (< 1024px wide):
-//   side  px taken by the page's side cards, so the scene is fitted to what is left between them
-//   cy    vertical centre of the scene as a fraction of the viewport height
-//   fit   world radius that must fit that width: larger shows the whole base, smaller zooms in on the car
-// These mirror the page layouts (FleetConsole, Checkout); retune here if the card widths change.
-const VIEWS: Record<View, Record<'desktop' | 'phone', { side: number; cy: number; fit: number }>> = {
-  fleet: { desktop: { side: 660, cy: 0.42, fit: R * 1.2 }, phone: { side: 0, cy: 0.3, fit: R * 1.12 } },
-  checkout: { desktop: { side: 790, cy: 0.47, fit: R * 1.0 }, phone: { side: 0, cy: 0.45, fit: R * 0.98 } },
+// How much of the scene must fit inside the page's <Stage> box, in world units:
+//   wide  half-width (fleet shows the whole base with air around it; checkout comes in closer)
+//   tall  full height, car roof to the front edge of the base
+// Both are generous on purpose: perspective makes the near edge of the base wider than it is at the car.
+const FIT: Record<View, { wide: number; tall: number }> = {
+  fleet: { wide: R * 1.75, tall: 3.4 },
+  checkout: { wide: R * 1.45, tall: 3.2 },
 }
 
-// Eases the camera distance and vertical placement toward the current page's framing. Once it has settled it lets
-// go, so the user's own zoom sticks until the page or the window size changes.
+// Fits the scene to the page's <Stage> element: reads its on-screen box every frame and eases the camera distance
+// and the view offset so the car sits centred in it, at any window size, zoom level or scroll position.
+// Once the distance has settled it lets go, so the user's own zoom sticks until the page or the box changes.
 function Framing({ view }: { view: View }) {
-  const at = useRef({ distance: 0, shift: 0, key: '' })
+  const at = useRef({ distance: 0, x: 0, y: 0, started: false })
   useFrame((state, dt) => {
     const controls = state.controls as OrbitControlsImpl | null
     if (!controls) return
     const { width, height } = state.size
-    const v = VIEWS[view][width < 1024 ? 'phone' : 'desktop']
+    // The canvas covers the viewport, so viewport coordinates are canvas coordinates.
+    const slot = document.getElementById(STAGE_ID)?.getBoundingClientRect()
+    const box = slot?.width ? slot : { left: 0, top: 0, width, height }
     const tan = Math.tan(degToRad(FOV / 2))
-    const distance = Math.max((v.fit * height) / (tan * Math.max(width - v.side, 280)), 2 / tan)
-    const shift = (0.5 - v.cy) * height
+    const fit = FIT[view]
+    const snug = width < 1024 ? 0.8 : 1 // phones: let the base run to the screen edges so the car stays readable
+    const distance = Math.max((fit.wide * snug * height) / (tan * box.width), (fit.tall * height) / (2 * tan * box.height))
+    const x = width / 2 - (box.left + box.width / 2)
+    const y = height / 2 - (box.top + box.height * 0.45) // above centre: the base hangs below the car
+
     const now = at.current
-    const key = `${width}x${height}`
-    if (!now.key) Object.assign(now, { distance, shift }) // first frame: no animation
-    const settled = Math.abs(now.distance - distance) < 0.01 && Math.abs(now.shift - shift) < 0.5
-    if (settled && now.key === key) return
-    now.distance = settled ? distance : damp(now.distance, distance, 2.4, dt)
-    now.shift = settled ? shift : damp(now.shift, shift, 2.4, dt)
-    now.key = key
+    const first = !now.started
+    if (first) Object.assign(now, { distance, x, y, started: true }) // first frame: jump straight there
+    const zoomed = Math.abs(now.distance - distance) < 0.01
+    const placed = Math.abs(now.x - x) < 0.5 && Math.abs(now.y - y) < 0.5
+    if (!first && zoomed && placed && now.distance === distance) return
+    // While the camera is travelling between pages the placement glides with it; otherwise it tracks the box
+    // closely (scrolling, resizing).
+    const follow = zoomed ? 18 : 3
+    now.distance = zoomed ? distance : damp(now.distance, distance, 2.4, dt)
+    now.x = placed ? x : damp(now.x, x, follow, dt)
+    now.y = placed ? y : damp(now.y, y, follow, dt)
     const camera = state.camera as THREE.PerspectiveCamera
     camera.position.sub(TARGET).setLength(now.distance).add(TARGET)
-    camera.setViewOffset(width, height, 0, now.shift, width, height)
+    camera.setViewOffset(width, height, now.x, now.y, width, height)
     controls.minDistance = now.distance * 0.85
     controls.maxDistance = now.distance * 1.25
     controls.update()

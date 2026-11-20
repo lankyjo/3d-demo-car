@@ -43,7 +43,7 @@ export function FleetConsole() {
       </div>
       <Stagger i={6}><div id="fleet" className="scroll-mt-6"><FleetStrip /></div></Stagger>
       <Stagger i={7} className="hidden self-end lg:block">
-        <Link href="/credits" className="hud text-[9px] text-mute/50 transition hover:text-cyan">Photo credits</Link>
+        <Link href="/credits" className="hud text-[0.5625rem] text-mute/50 transition hover:text-cyan">Photo credits</Link>
       </Stagger>
     </main>
   )

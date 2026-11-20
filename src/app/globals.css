@@ -62,7 +62,7 @@
 
 /* Small uppercase HUD label. */
 @utility hud {
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: var(--tracking-hud);
   text-transform: uppercase;
 }
@@ -123,7 +123,15 @@
 }
 
 @layer base {
-  html { color-scheme: dark; }
+  /* No visible scrollbars anywhere; pages that are longer than the screen still scroll. */
+  html { color-scheme: dark; scrollbar-width: none; }
+  ::-webkit-scrollbar { display: none; }
+  /* Desktop: the whole interface scales with the window, like a fixed-layout console. Everything is sized in rem,
+     so one number does it. 16px at 1440x900 (the design size); smaller windows shrink it so the console still
+     fits one screen, and it never grows past 16px. Phones keep the browser default. */
+  @media (min-width: 64rem) {
+    html { font-size: clamp(10px, min(1.111vw, 1.78vh), 16px); }
+  }
   body { @apply scene min-h-dvh font-sans text-ink antialiased; }
 
   input, select {

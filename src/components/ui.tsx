@@ -32,7 +32,7 @@ export const Label = ({ children, className = '' }: { children: React.ReactNode;
 export const Row = ({ label, children }: { label: React.ReactNode; children: React.ReactNode }) => (
   <div className="border-b border-line py-3.5 last:border-0">
     <Label>{label}</Label>
-    <div className="mt-1.5 flex items-center gap-3 text-[15px] tracking-[0.08em] text-ink uppercase">{children}</div>
+    <div className="mt-1.5 flex items-center gap-3 text-[0.9375rem] tracking-[0.08em] text-ink uppercase">{children}</div>
   </div>
 )
 

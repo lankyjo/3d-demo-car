@@ -39,13 +39,13 @@ export function MobileDrawer() {
       >
         <span className="min-w-0 flex-1">
           <Label><Dot /> Unit {t.unit}</Label>
-          <span className="mt-0.5 block truncate text-[15px] tracking-[0.08em] uppercase">{car.brand} {car.model}</span>
+          <span className="mt-0.5 block truncate text-[0.9375rem] tracking-[0.08em] uppercase">{car.brand} {car.model}</span>
         </span>
         <span className="shrink-0 text-right">
           <span className="font-display text-lg tabular-nums">{money(weeklyRate(car))}</span>
-          <span className="hud ml-1.5 text-[10px] text-cyan">/ week</span>
+          <span className="hud ml-1.5 text-[0.625rem] text-cyan">/ week</span>
         </span>
-        <span className="hud flex shrink-0 flex-col items-center text-[9px] text-cyan">
+        <span className="hud flex shrink-0 flex-col items-center text-[0.5625rem] text-cyan">
           <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 15l7-7 7 7" /></svg>
           Details
         </span>
@@ -71,7 +71,7 @@ export function MobileDrawer() {
         <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
           <UnitPanel />
           <PricingPanel />
-          <Link href="/credits" className="hud block text-center text-[9px] text-mute/60">Photo credits</Link>
+          <Link href="/credits" className="hud block text-center text-[0.5625rem] text-mute/60">Photo credits</Link>
         </div>
       </section>
     </div>

@@ -27,10 +27,10 @@ function Availability({ week }: { week: boolean[] }) {
           )
         })}
       </ul>
-      <ul className="hud mt-1.5 grid grid-cols-7 gap-2 px-1 text-center text-[10px]">
+      <ul className="hud mt-1.5 grid grid-cols-7 gap-2 px-1 text-center text-[0.625rem]">
         {week.map((open, i) => <li key={i} className={open ? 'text-ink' : 'text-mute/50'}>{days[i]}</li>)}
       </ul>
-      <p className="hud mt-2 flex gap-4 text-[10px] text-mute">
+      <p className="hud mt-2 flex gap-4 text-[0.625rem] text-mute">
         <span className="flex items-center gap-1.5"><i className="size-2 bg-cyan" />Open</span>
         <span className="flex items-center gap-1.5"><i className="size-2 border border-mute" />Booked</span>
       </p>
@@ -49,17 +49,17 @@ export function PricingPanel() {
         <div className="mt-4 border-b border-line pb-4">
           <Label className="text-ink">Weekly rate</Label>
           <p className="mt-2 flex items-baseline gap-3">
-            <span className="font-display text-[40px] leading-none tabular-nums [-webkit-text-stroke:1.2px_currentColor] [text-shadow:0_0_16px_rgb(230_238_255/0.55)]">{money(weeklyRate(car))}</span>
+            <span className="font-display text-[2.5rem] leading-none tabular-nums [-webkit-text-stroke:1.2px_currentColor] [text-shadow:0_0_16px_rgb(230_238_255/0.55)]">{money(weeklyRate(car))}</span>
             <span className="hud text-sm text-cyan">/ week</span>
           </p>
-          <p className="hud mt-2 text-[10px] text-mute">or {money(car.dailyRate)} / day</p>
+          <p className="hud mt-2 text-[0.625rem] text-mute">or {money(car.dailyRate)} / day</p>
         </div>
         <Row label="Rideshare compatibility">
           <span className="text-cyan">{t.rideshare}</span>
           <Check />
         </Row>
         <Availability week={t.week} />
-        <p className="hud flex justify-between pt-3 text-[10px] text-mute">
+        <p className="hud flex justify-between pt-3 text-[0.625rem] text-mute">
           <span>Rate lock: 48H</span>
           <span>Updated: <span className="text-cyan">just now</span></span>
         </p>

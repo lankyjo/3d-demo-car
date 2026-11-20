@@ -26,7 +26,7 @@ export function UnitPanel() {
       <div className="flex h-full flex-col justify-between">
         <div>
           <Label><Dot /> Unit ID</Label>
-          <h2 className="mt-3 border-b border-line pb-4 text-[17px] leading-snug tracking-[0.08em] text-balance uppercase">
+          <h2 className="mt-3 border-b border-line pb-4 text-[1.0625rem] leading-snug tracking-[0.08em] text-balance uppercase">
             Unit {t.unit} / {car.brand === 'Mercedes-Benz' ? 'Mercedes' : car.brand} {car.model}
           </h2>
         </div>

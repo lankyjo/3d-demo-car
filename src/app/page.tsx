@@ -5,7 +5,7 @@ import { Stagger } from '@/features/scene/components/Stagger'
 
 export default function Home() {
   return (
-    <PageShell className="flex h-dvh flex-col overflow-hidden lg:h-auto lg:min-h-dvh lg:overflow-visible">
+    <PageShell className="flex h-dvh flex-col overflow-hidden">
       <Stagger i={0} from="up"><Header /></Stagger>
       <FleetConsole />
     </PageShell>
